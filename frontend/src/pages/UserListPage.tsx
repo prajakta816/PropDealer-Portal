@@ -260,6 +260,7 @@ export function UserListPage() {
       headerName: 'User',
       flex: 1,
       minWidth: 200,
+      sortable: false,
       renderCell: (params: GridRenderCellParams) => (
         <Box className="flex items-center gap-3 py-2">
           <Avatar
@@ -285,6 +286,7 @@ export function UserListPage() {
       headerName: 'Email Address',
       flex: 1.4,
       minWidth: 220,
+      sortable: false,
       renderCell: (params: GridRenderCellParams) => (
         <Typography variant="body2" sx={{ color: '#475569', fontSize: '0.85rem' }}>
           {params.row.email}
@@ -295,6 +297,7 @@ export function UserListPage() {
       field: 'role',
       headerName: 'Role',
       width: 190,
+      sortable: false,
       renderCell: (params: GridRenderCellParams) => (
         <Chip
           label={params.row.role}
@@ -512,6 +515,7 @@ export function UserListPage() {
                 pagination: { paginationModel: { pageSize: 5 } },
               }}
               autoHeight
+              disableColumnSorting
               disableRowSelectionOnClick
               rowHeight={72}
             />
