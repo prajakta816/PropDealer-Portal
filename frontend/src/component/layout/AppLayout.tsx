@@ -5,7 +5,7 @@ import Header from './Header'
 import Sidebar from './Sidebar'
 import Footer from './Footer'
 
-import type { ROLES,  UserRole } from '../../constants/roles'
+import type { UserRole } from '../../constants/roles'
 
 interface AppLayoutProps {
   role: UserRole
