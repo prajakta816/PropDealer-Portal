@@ -4,6 +4,7 @@ import HomePage from '../pages/HomePage'
 import { LoginPage } from '../pages/LoginPage'
 import AppLayout from '../component/layout/AppLayout'
 import { DashboardPage } from '../pages/DashboardPage'
+import { UserListPage } from '../pages/UserListPage'
 import { PlaceholderPage } from '../pages/PlaceholderPage'
 import { ProtectedRoute } from './guards/ProtectedRoute'
 import { PublicOnlyRoute } from './guards/PublicOnlyRoute'
@@ -39,10 +40,7 @@ function AppRoutes() {
             path="/users"
             element={
               <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
-                <PlaceholderPage
-                  title="User Management"
-                  description="Admin workspace to view, create, and manage registered portal users."
-                />
+                <UserListPage />
               </ProtectedRoute>
             }
           />
