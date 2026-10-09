@@ -8,9 +8,10 @@ import {
 } from '@mui/material'
 import { Link as RouterLink } from 'react-router-dom'
 import { DashboardOutlined, LoginOutlined } from '@mui/icons-material'
+import { useAuth } from '../../context'
 
 function PublicHeader() {
-  const isAuthenticated = false
+  const { isAuthenticated } = useAuth()
 
   return (
     <AppBar

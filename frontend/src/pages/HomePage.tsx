@@ -1,6 +1,7 @@
 import { ArrowForward, Apartment, Groups, TrendingUp } from '@mui/icons-material'
 import { Box, Button, Container, Typography } from '@mui/material'
 import { Link as RouterLink } from 'react-router-dom'
+import { useAuth } from '../context'
 
 const features = [
   {
@@ -24,7 +25,7 @@ const features = [
 ]
 
 function HomePage() {
-  const isAuthenticated = false
+  const { isAuthenticated } = useAuth()
   const workspaceTarget = isAuthenticated ? '/dashboard' : '/login'
 
   return (
