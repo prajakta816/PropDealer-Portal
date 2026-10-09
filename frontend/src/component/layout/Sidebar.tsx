@@ -75,12 +75,30 @@ function Sidebar({ role }: SidebarProps) {
             PropDealer
           </Typography>
 
-          <Typography
-            variant="caption"
-            color="text.secondary"
-          >
-            Portal
-          </Typography>
+          <Box className="flex items-center gap-1.5">
+            <Typography
+              variant="caption"
+              color="text.secondary"
+            >
+              Portal
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{
+                fontSize: '0.68rem',
+                fontWeight: 700,
+                color: 'primary.main',
+                backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                px: 0.8,
+                py: 0.1,
+                borderRadius: '4px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+              }}
+            >
+              {role}
+            </Typography>
+          </Box>
         </Box>
       </Toolbar>
 

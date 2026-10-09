@@ -121,22 +121,30 @@ function Header({ role, userName }: HeaderProps) {
             aria-controls={menuOpen ? 'user-menu' : undefined}
             aria-haspopup="true"
             aria-expanded={menuOpen ? 'true' : undefined}
-            className="group flex flex-col items-center justify-center rounded-2xl px-3 py-1.5 transition-all duration-200 hover:bg-slate-100"
+            className="group flex items-center gap-2.5 rounded-2xl px-3 py-1.5 transition-all duration-200 hover:bg-slate-100"
           >
             <Box className="relative">
               <Avatar
-                className={`h-11 w-11 bg-gradient-to-tr ${roleConfig.gradient} text-white shadow-md transition-transform duration-200 group-hover:scale-105 ring-2 ${roleConfig.ringColor}`}
+                className={`h-10 w-10 bg-gradient-to-tr ${roleConfig.gradient} text-white shadow-md transition-transform duration-200 group-hover:scale-105 ring-2 ${roleConfig.ringColor}`}
               >
                 <RoleIcon className="text-white" fontSize="small" />
               </Avatar>
             </Box>
 
-            <Typography
-              variant="caption"
-              className="!mt-1 !max-w-[120px] !truncate !text-xs !font-bold !tracking-tight !text-slate-800 group-hover:!text-blue-700"
-            >
-              {activeName}
-            </Typography>
+            <Box className="flex flex-col items-start text-left">
+              <Typography
+                variant="body2"
+                className="!max-w-[140px] !truncate !text-xs !font-bold !text-slate-800 group-hover:!text-blue-700"
+              >
+                {activeName}
+              </Typography>
+              <Typography
+                variant="caption"
+                className="!text-[10px] !font-semibold !text-slate-500 uppercase tracking-wider"
+              >
+                {roleConfig.label}
+              </Typography>
+            </Box>
           </ButtonBase>
 
           <Menu
