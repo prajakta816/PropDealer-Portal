@@ -516,6 +516,7 @@ export function UserListPage() {
               }}
               autoHeight
               disableColumnSorting
+              disableColumnMenu
               disableRowSelectionOnClick
               rowHeight={72}
             />
