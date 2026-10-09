@@ -84,7 +84,7 @@ function AppRoutes() {
           <Route
             path="/properties"
             element={
-              <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.AGENT]}>
+              <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.AGENT, ROLES.BUYER]}>
                 <PlaceholderPage
                   title="Property Directory"
                   description="Listings, commercial units, and residential properties under management."

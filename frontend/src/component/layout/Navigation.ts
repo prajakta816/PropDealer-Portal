@@ -36,6 +36,7 @@ export const navigationSections: NavigationSection[] = [
           ROLES.ADMIN,
           ROLES.AGENT,
           ROLES.COMMISSION_MANAGER,
+          ROLES.BUYER,
         ],
       },
     ],
@@ -44,6 +45,12 @@ export const navigationSections: NavigationSection[] = [
   {
     title: 'Management',
     items: [
+      {
+        label: 'Users',
+        path: '/users',
+        icon: Group,
+        allowedRoles: [ROLES.ADMIN],
+      },
       {
         label: 'Agents',
         path: '/agents',
@@ -66,7 +73,7 @@ export const navigationSections: NavigationSection[] = [
         label: 'Properties',
         path: '/properties',
         icon: Business,
-        allowedRoles: [ROLES.ADMIN, ROLES.AGENT],
+        allowedRoles: [ROLES.ADMIN, ROLES.AGENT, ROLES.BUYER],
       },
       {
         label: 'Commission List',
