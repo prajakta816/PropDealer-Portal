@@ -154,9 +154,13 @@ function Sidebar({ role }: SidebarProps) {
 
                     <ListItemText
                       primary={item.label}
-                      primaryTypographyProps={{
-                        fontSize: 14,
-                        fontWeight: 500,
+                      slotProps={{
+                        primary: {
+                          sx: {
+                            fontSize: 14,
+                            fontWeight: 500,
+                          },
+                        },
                       }}
                       sx={{
                         '@media (max-width: 900px)': {

@@ -1,24 +1,14 @@
-import { Typography } from '@mui/material'
-
-import AppLayout from './component/layout/AppLayout'
+import { Route, Routes } from 'react-router-dom'
+import PublicLayout from './component/public/PublicLayout'
+import HomePage from './pages/HomePage'
 
 function App() {
   return (
-    <AppLayout>
-      <div className="flex flex-1 flex-col p-6">
-        <Typography variant="h4" component="h2">
-          Dashboard
-        </Typography>
-
-        <Typography
-          variant="body1"
-          color="text.secondary"
-          className="mt-2"
-        >
-          Welcome to PropDealer Portal.
-        </Typography>
-      </div>
-    </AppLayout>
+    <Routes>
+      <Route element={<PublicLayout />}>
+        <Route path="/" element={<HomePage />} />
+      </Route>
+    </Routes>
   )
 }
 
