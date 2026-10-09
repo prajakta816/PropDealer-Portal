@@ -4,6 +4,7 @@ import {
   Dashboard,
   Group,
   ManageAccounts,
+  PeopleAlt,
   ReceiptLong,
   Settings,
   Tune,
@@ -36,6 +37,7 @@ export const navigationSections: NavigationSection[] = [
           ROLES.ADMIN,
           ROLES.AGENT,
           ROLES.COMMISSION_MANAGER,
+          ROLES.BUYER,
         ],
       },
     ],
@@ -44,6 +46,12 @@ export const navigationSections: NavigationSection[] = [
   {
     title: 'Management',
     items: [
+      {
+        label: 'Users',
+        path: '/users',
+        icon: PeopleAlt,
+        allowedRoles: [ROLES.ADMIN],
+      },
       {
         label: 'Agents',
         path: '/agents',
@@ -66,7 +74,7 @@ export const navigationSections: NavigationSection[] = [
         label: 'Properties',
         path: '/properties',
         icon: Business,
-        allowedRoles: [ROLES.ADMIN, ROLES.AGENT],
+        allowedRoles: [ROLES.ADMIN, ROLES.AGENT, ROLES.BUYER],
       },
       {
         label: 'Commission List',
@@ -84,7 +92,7 @@ export const navigationSections: NavigationSection[] = [
         label: 'Invoices',
         path: '/invoices',
         icon: ReceiptLong,
-        allowedRoles: [ROLES.ADMIN, ROLES.AGENT],
+        allowedRoles: [ROLES.ADMIN, ROLES.AGENT, ROLES.BUYER],
       },
     ],
   },
@@ -106,7 +114,4 @@ export const navigationSections: NavigationSection[] = [
       },
     ],
   },
-
-  // Account section removed because Edit Profile
-  // should no longer appear in the Sidebar.
 ]
