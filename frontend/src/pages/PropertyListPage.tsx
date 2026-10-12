@@ -217,21 +217,30 @@ export function PropertyListPage() {
     const rawData = localStorage.getItem(PROPERTIES_STORAGE_KEY)
     const existing: Property[] = rawData ? JSON.parse(rawData) : []
 
-    // 4. Duplicate check: check if a property with the same title and address already exists
+    // 4. Duplicate check: check if title OR address already exists
     const trimmedTitle = title.trim().toLowerCase()
     const trimmedAddress = address.trim().toLowerCase()
 
     if (modalMode === 'create') {
-      const isDuplicate = existing.some(
-        (p) =>
-          p.title.trim().toLowerCase() === trimmedTitle &&
-          p.address.trim().toLowerCase() === trimmedAddress
+      const titleExists = existing.some(
+        (p) => p.title.trim().toLowerCase() === trimmedTitle
+      )
+      const addressExists = existing.some(
+        (p) => p.address.trim().toLowerCase() === trimmedAddress
       )
 
-      if (isDuplicate) {
-        setErrorMessage('A property with this title and address already exists.')
-        setTitleError('Title already used for this address.')
-        setAddressError('Address already used for this title.')
+      if (titleExists || addressExists) {
+        if (titleExists && addressExists) {
+          setErrorMessage('A property with this title and address already exists.')
+          setTitleError('A property with this title already exists.')
+          setAddressError('A property at this address already exists.')
+        } else if (titleExists) {
+          setErrorMessage('A property with this title already exists.')
+          setTitleError('A property with this title already exists.')
+        } else {
+          setErrorMessage('A property at this address already exists.')
+          setAddressError('A property at this address already exists.')
+        }
         return
       }
 
@@ -260,17 +269,29 @@ export function PropertyListPage() {
     }
 
     if (modalMode === 'edit' && selectedProperty) {
-      const isDuplicate = existing.some(
+      const titleExists = existing.some(
         (p) =>
           p.id !== selectedProperty.id &&
-          p.title.trim().toLowerCase() === trimmedTitle &&
+          p.title.trim().toLowerCase() === trimmedTitle
+      )
+      const addressExists = existing.some(
+        (p) =>
+          p.id !== selectedProperty.id &&
           p.address.trim().toLowerCase() === trimmedAddress
       )
 
-      if (isDuplicate) {
-        setErrorMessage('Another property with this title and address already exists.')
-        setTitleError('Title already used for this address.')
-        setAddressError('Address already used for this title.')
+      if (titleExists || addressExists) {
+        if (titleExists && addressExists) {
+          setErrorMessage('Another property with this title and address already exists.')
+          setTitleError('Another property with this title already exists.')
+          setAddressError('Another property at this address already exists.')
+        } else if (titleExists) {
+          setErrorMessage('Another property with this title already exists.')
+          setTitleError('Another property with this title already exists.')
+        } else {
+          setErrorMessage('Another property at this address already exists.')
+          setAddressError('Another property at this address already exists.')
+        }
         return
       }
 
