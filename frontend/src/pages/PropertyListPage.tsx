@@ -10,6 +10,7 @@ import {
   DialogTitle,
   IconButton,
   InputAdornment,
+  MenuItem,
   Snackbar,
   TextField,
   Tooltip,
@@ -23,10 +24,16 @@ import {
   EditOutlined,
   HomeWorkOutlined,
   LocationOnOutlined,
+  RestartAlt,
   Search,
+  Sort,
   VisibilityOutlined,
 } from '@mui/icons-material'
-import { DataGrid, type GridColDef, type GridRenderCellParams } from '@mui/x-data-grid'
+import {
+  DataGrid,
+  type GridColDef,
+  type GridRenderCellParams,
+} from '@mui/x-data-grid'
 import { Link as RouterLink } from 'react-router-dom'
 import { useAuth } from '../context'
 import { ROLES } from '../constants/roles'
@@ -39,8 +46,15 @@ import {
 
 type ModalMode = 'create' | 'edit' | 'view' | null
 
+// Fields the user can sort by.
+type SortField = 'title' | 'address' | 'basePrice' | 'status'
+
+// Direction in which the selected field will be sorted.
+type SortDirection = 'asc' | 'desc'
+
 function loadProperties(): Property[] {
   const rawData = localStorage.getItem(PROPERTIES_STORAGE_KEY)
+
   if (rawData) {
     try {
       return JSON.parse(rawData) as Property[]
@@ -48,6 +62,7 @@ function loadProperties(): Property[] {
       return []
     }
   }
+
   return []
 }
 
@@ -55,11 +70,16 @@ export function PropertyListPage() {
   const { user } = useAuth()
   const isAdmin = user?.role === ROLES.ADMIN
 
-  const [properties, setProperties] = useState<Property[]>(loadProperties)//Initialize state using loadProperties()
+  const [properties, setProperties] = useState<Property[]>(loadProperties)
   const [modalMode, setModalMode] = useState<ModalMode>(null)
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
 
+  // Existing search functionality — unchanged.
   const [searchQuery, setSearchQuery] = useState('')
+
+  // Sorting state.
+  const [sortField, setSortField] = useState<SortField>('title')
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
 
   const [title, setTitle] = useState('')
   const [address, setAddress] = useState('')
@@ -67,16 +87,51 @@ export function PropertyListPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
 
+  // STEP 1: Filter properties using the existing title/address search.
   const query = searchQuery.trim().toLowerCase()
+
   const filteredProperties = properties.filter((property) => {
     if (!query) {
       return true
     }
+
     return (
       property.title.toLowerCase().includes(query) ||
       property.address.toLowerCase().includes(query)
     )
   })
+
+  // STEP 2: Sort a copy of the filtered results.
+  // We copy the array so the original properties state is not mutated.
+  const sortedProperties = [...filteredProperties].sort((a, b) => {
+    let result = 0
+
+    switch (sortField) {
+      case 'title':
+        result = a.title.localeCompare(b.title)
+        break
+
+      case 'address':
+        result = a.address.localeCompare(b.address)
+        break
+
+      case 'basePrice':
+        result = a.basePrice - b.basePrice
+        break
+
+      case 'status':
+        result = a.status.localeCompare(b.status)
+        break
+    }
+
+    return sortDirection === 'asc' ? result : -result
+  })
+
+  // Reset sorting to the default values.
+  const handleClearSorting = () => {
+    setSortField('title')
+    setSortDirection('asc')
+  }
 
   const resetForm = () => {
     setTitle('')
@@ -130,6 +185,7 @@ export function PropertyListPage() {
     }
 
     const parsedPrice = Number(basePrice)
+
     if (!basePrice || isNaN(parsedPrice) || parsedPrice <= 0) {
       setErrorMessage('Please enter a valid positive base price.')
       return
@@ -149,27 +205,39 @@ export function PropertyListPage() {
       }
 
       const updated = [newProperty, ...existing]
-      localStorage.setItem(PROPERTIES_STORAGE_KEY, JSON.stringify(updated))
+
+      localStorage.setItem(
+        PROPERTIES_STORAGE_KEY,
+        JSON.stringify(updated),
+      )
+
       setProperties(updated)
-      setToastMessage('Property created successfully with Available status.')
+      setToastMessage(
+        'Property created successfully with Available status.',
+      )
       closeModal()
       return
     }
 
     if (modalMode === 'edit' && selectedProperty) {
-      const updated = existing.map((p) => {
-        if (p.id !== selectedProperty.id) {
-          return p
+      const updated = existing.map((property) => {
+        if (property.id !== selectedProperty.id) {
+          return property
         }
+
         return {
-          ...p,
+          ...property,
           title: title.trim(),
           address: address.trim(),
           basePrice: parsedPrice,
         }
       })
 
-      localStorage.setItem(PROPERTIES_STORAGE_KEY, JSON.stringify(updated))
+      localStorage.setItem(
+        PROPERTIES_STORAGE_KEY,
+        JSON.stringify(updated),
+      )
+
       setProperties(updated)
       setToastMessage('Property updated successfully.')
       closeModal()
@@ -184,7 +252,10 @@ export function PropertyListPage() {
       minWidth: 200,
       renderCell: (params: GridRenderCellParams) => (
         <Box className="flex items-center gap-2 py-2">
-          <Typography variant="body2" sx={{ fontWeight: 600, color: '#0f172a' }}>
+          <Typography
+            variant="body2"
+            sx={{ fontWeight: 600, color: '#0f172a' }}
+          >
             {params.row.title}
           </Typography>
         </Box>
@@ -196,7 +267,10 @@ export function PropertyListPage() {
       flex: 1.5,
       minWidth: 220,
       renderCell: (params: GridRenderCellParams) => (
-        <Typography variant="body2" sx={{ color: '#475569', fontSize: '0.85rem' }}>
+        <Typography
+          variant="body2"
+          sx={{ color: '#475569', fontSize: '0.85rem' }}
+        >
           {params.row.address}
         </Typography>
       ),
@@ -206,7 +280,10 @@ export function PropertyListPage() {
       headerName: 'Base Price',
       width: 170,
       renderCell: (params: GridRenderCellParams) => (
-        <Typography variant="body2" sx={{ fontWeight: 600, color: '#0f172a' }}>
+        <Typography
+          variant="body2"
+          sx={{ fontWeight: 600, color: '#0f172a' }}
+        >
           ₹ {Number(params.row.basePrice).toLocaleString('en-IN')}
         </Typography>
       ),
@@ -217,7 +294,11 @@ export function PropertyListPage() {
       width: 180,
       renderCell: (params: GridRenderCellParams) => {
         const currentStatus = params.row.status as PropertyStatus
-        const statusConfig = PROPERTY_STATUS_CONFIG[currentStatus] || PROPERTY_STATUS_CONFIG.available
+
+        const statusConfig =
+          PROPERTY_STATUS_CONFIG[currentStatus] ||
+          PROPERTY_STATUS_CONFIG.available
+
         return (
           <Chip
             label={statusConfig.label}
@@ -240,6 +321,7 @@ export function PropertyListPage() {
       headerAlign: 'center',
       renderCell: (params: GridRenderCellParams) => {
         const property = params.row as Property
+
         return (
           <Box className="flex items-center gap-1">
             <Tooltip title="View Property" arrow>
@@ -248,7 +330,10 @@ export function PropertyListPage() {
                 onClick={() => openView(property)}
                 sx={{
                   transition: 'all 0.2s',
-                  '&:hover': { backgroundColor: '#dbeafe', color: '#2563eb' },
+                  '&:hover': {
+                    backgroundColor: '#dbeafe',
+                    color: '#2563eb',
+                  },
                 }}
               >
                 <VisibilityOutlined fontSize="small" />
@@ -262,7 +347,10 @@ export function PropertyListPage() {
                   onClick={() => openEdit(property)}
                   sx={{
                     transition: 'all 0.2s',
-                    '&:hover': { backgroundColor: '#d1fae5', color: '#059669' },
+                    '&:hover': {
+                      backgroundColor: '#d1fae5',
+                      color: '#059669',
+                    },
                   }}
                 >
                   <EditOutlined fontSize="small" />
@@ -279,14 +367,17 @@ export function PropertyListPage() {
     <Box
       className="flex-1 p-6 md:p-8"
       sx={{
-        background: 'linear-gradient(135deg, #f0f4ff 0%, #f8fafc 50%, #f0fdf4 100%)',
+        background:
+          'linear-gradient(135deg, #f0f4ff 0%, #f8fafc 50%, #f0fdf4 100%)',
         minHeight: '100%',
       }}
     >
       <Container maxWidth="xl" disableGutters>
+        {/* Page header */}
         <Box
           sx={{
-            background: 'linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 50%, #2563eb 100%)',
+            background:
+              'linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 50%, #2563eb 100%)',
             borderRadius: '20px',
             p: { xs: 3, md: 4 },
             mb: 4,
@@ -304,16 +395,28 @@ export function PropertyListPage() {
                   color: 'rgba(255,255,255,0.75)',
                   textTransform: 'none',
                   fontSize: '0.8rem',
-                  '&:hover': { color: '#fff', backgroundColor: 'rgba(255,255,255,0.1)' },
+                  '&:hover': {
+                    color: '#fff',
+                    backgroundColor: 'rgba(255,255,255,0.1)',
+                  },
                 }}
                 size="small"
               >
                 Back to Dashboard
               </Button>
-              <Typography variant="h4" component="h1" sx={{ fontWeight: 800, color: '#fff' }}>
+
+              <Typography
+                variant="h4"
+                component="h1"
+                sx={{ fontWeight: 800, color: '#fff' }}
+              >
                 Property Management
               </Typography>
-              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.65)', mt: 0.5 }}>
+
+              <Typography
+                variant="body2"
+                sx={{ color: 'rgba(255,255,255,0.65)', mt: 0.5 }}
+              >
                 {properties.length} properties listed in the system
               </Typography>
             </Box>
@@ -341,35 +444,138 @@ export function PropertyListPage() {
           </Box>
         </Box>
 
+        {/* Existing search + new sorting controls */}
         <Box
           sx={{
             background: '#fff',
             borderRadius: '20px',
             border: '1px solid #e2e8f0',
-            p: 3,
+            p: { xs: 2, md: 3 },
             mb: 3,
             boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
           }}
         >
-          <TextField
-            fullWidth
-            placeholder="Search properties by title or address..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            size="small"
-            slotProps={{
-              input: {
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search className="text-slate-400" fontSize="small" />
-                  </InputAdornment>
-                ),
-                className: 'rounded-xl',
-              },
+          {/* Existing search — unchanged */}
+          <Box className="mb-5">
+            <Typography
+              variant="subtitle1"
+              sx={{
+                fontWeight: 700,
+                color: '#0f172a',
+                mb: 1.5,
+              }}
+            >
+              Search Properties
+            </Typography>
+
+            <TextField
+              fullWidth
+              placeholder="Search properties by title or address..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              size="small"
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search
+                        className="text-slate-400"
+                        fontSize="small"
+                      />
+                    </InputAdornment>
+                  ),
+                  className: 'rounded-xl',
+                },
+              }}
+            />
+          </Box>
+
+          {/* New sorting controls */}
+          <Box
+            sx={{
+              borderTop: '1px solid #e2e8f0',
+              pt: 2.5,
             }}
-          />
+          >
+            <Box className="mb-3 flex items-center gap-2">
+              <Sort sx={{ color: '#2563eb' }} />
+
+              <Typography
+                variant="subtitle1"
+                sx={{ fontWeight: 700, color: '#0f172a' }}
+              >
+                Sort Properties
+              </Typography>
+            </Box>
+
+            <Box className="flex flex-col gap-3 md:flex-row md:items-center">
+              <TextField
+                select
+                fullWidth
+                label="Sort by"
+                value={sortField}
+                onChange={(e) =>
+                  setSortField(e.target.value as SortField)
+                }
+                size="small"
+              >
+                <MenuItem value="title">Property Name</MenuItem>
+                <MenuItem value="address">Address</MenuItem>
+                <MenuItem value="basePrice">Base Price</MenuItem>
+                <MenuItem value="status">Status</MenuItem>
+              </TextField>
+
+              <TextField
+                select
+                fullWidth
+                label="Order"
+                value={sortDirection}
+                onChange={(e) =>
+                  setSortDirection(
+                    e.target.value as SortDirection,
+                  )
+                }
+                size="small"
+              >
+                <MenuItem value="asc">
+                  Ascending (A–Z / Low–High)
+                </MenuItem>
+                <MenuItem value="desc">
+                  Descending (Z–A / High–Low)
+                </MenuItem>
+              </TextField>
+
+              <Button
+                onClick={handleClearSorting}
+                variant="outlined"
+                startIcon={<RestartAlt />}
+                sx={{
+                  minWidth: { xs: '100%', md: '155px' },
+                  py: 1,
+                  borderRadius: '10px',
+                  textTransform: 'none',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Clear Sorting
+              </Button>
+            </Box>
+
+            <Typography
+              variant="caption"
+              sx={{
+                display: 'block',
+                mt: 1.5,
+                color: '#64748b',
+              }}
+            >
+              Showing {sortedProperties.length} of {properties.length}{' '}
+              properties
+            </Typography>
+          </Box>
         </Box>
 
+        {/* Property table */}
         <Box
           sx={{
             background: '#fff',
@@ -382,9 +588,13 @@ export function PropertyListPage() {
         >
           <Box
             sx={{
-              '& .MuiDataGrid-root': { border: 'none', fontFamily: 'inherit' },
+              '& .MuiDataGrid-root': {
+                border: 'none',
+                fontFamily: 'inherit',
+              },
               '& .MuiDataGrid-columnHeaders': {
-                background: 'linear-gradient(90deg, #f8fafc, #f1f5f9)',
+                background:
+                  'linear-gradient(90deg, #f8fafc, #f1f5f9)',
                 borderBottom: '2px solid #e2e8f0',
               },
               '& .MuiDataGrid-columnHeaderTitle': {
@@ -399,17 +609,20 @@ export function PropertyListPage() {
               },
               '& .MuiDataGrid-footerContainer': {
                 borderTop: '1px solid #e2e8f0',
-                background: 'linear-gradient(90deg, #f8fafc, #f1f5f9)',
+                background:
+                  'linear-gradient(90deg, #f8fafc, #f1f5f9)',
               },
             }}
           >
             <DataGrid
-              rows={filteredProperties}
+              rows={sortedProperties}
               columns={columns}
               getRowId={(row) => row.id}
               pageSizeOptions={[5, 10, 25]}
               initialState={{
-                pagination: { paginationModel: { pageSize: 5 } },
+                pagination: {
+                  paginationModel: { pageSize: 5 },
+                },
               }}
               autoHeight
               disableColumnMenu
@@ -421,27 +634,42 @@ export function PropertyListPage() {
         </Box>
       </Container>
 
+      {/* Create / Edit / View dialog */}
       <Dialog
         open={modalMode !== null}
         onClose={closeModal}
         maxWidth="sm"
         fullWidth
-        slotProps={{ paper: { className: 'rounded-2xl' } }}
+        slotProps={{
+          paper: { className: 'rounded-2xl' },
+        }}
       >
         <DialogTitle className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
           <Box>
-            <Typography variant="h6" className="!font-bold !text-slate-900">
+            <Typography
+              variant="h6"
+              className="!font-bold !text-slate-900"
+            >
               {modalMode === 'create' && 'Create New Property'}
               {modalMode === 'edit' && 'Edit Property Details'}
               {modalMode === 'view' && 'Property Details'}
             </Typography>
+
             <Typography variant="caption" className="!text-slate-500">
-              {modalMode === 'create' && 'Add a new property listing with default Available status.'}
-              {modalMode === 'edit' && 'Update property title, address, and base price.'}
-              {modalMode === 'view' && 'Read-only view of property details.'}
+              {modalMode === 'create' &&
+                'Add a new property listing with default Available status.'}
+              {modalMode === 'edit' &&
+                'Update property title, address, and base price.'}
+              {modalMode === 'view' &&
+                'Read-only view of property details.'}
             </Typography>
           </Box>
-          <IconButton onClick={closeModal} size="small" className="text-slate-400 hover:text-slate-700">
+
+          <IconButton
+            onClick={closeModal}
+            size="small"
+            className="text-slate-400 hover:text-slate-700"
+          >
             <Close fontSize="small" />
           </IconButton>
         </DialogTitle>
@@ -453,22 +681,35 @@ export function PropertyListPage() {
             </Alert>
           )}
 
-          <Box component="form" onSubmit={handleSubmit} noValidate className="space-y-4">
+          <Box
+            component="form"
+            onSubmit={handleSubmit}
+            noValidate
+            className="space-y-4"
+          >
             {selectedProperty && (
               <Box>
-                <Typography className="!mb-1.5 !text-sm !font-semibold !text-slate-700">Property ID</Typography>
+                <Typography className="!mb-1.5 !text-sm !font-semibold !text-slate-700">
+                  Property ID
+                </Typography>
+
                 <TextField
                   fullWidth
                   disabled
                   value={selectedProperty.id}
                   size="small"
-                  slotProps={{ input: { className: 'rounded-xl' } }}
+                  slotProps={{
+                    input: { className: 'rounded-xl' },
+                  }}
                 />
               </Box>
             )}
 
             <Box>
-              <Typography className="!mb-1.5 !text-sm !font-semibold !text-slate-700">Title</Typography>
+              <Typography className="!mb-1.5 !text-sm !font-semibold !text-slate-700">
+                Title
+              </Typography>
+
               <TextField
                 fullWidth
                 disabled={modalMode === 'view'}
@@ -480,7 +721,10 @@ export function PropertyListPage() {
                   input: {
                     startAdornment: (
                       <InputAdornment position="start">
-                        <HomeWorkOutlined className="text-slate-400" fontSize="small" />
+                        <HomeWorkOutlined
+                          className="text-slate-400"
+                          fontSize="small"
+                        />
                       </InputAdornment>
                     ),
                     className: 'rounded-xl',
@@ -490,7 +734,10 @@ export function PropertyListPage() {
             </Box>
 
             <Box>
-              <Typography className="!mb-1.5 !text-sm !font-semibold !text-slate-700">Address</Typography>
+              <Typography className="!mb-1.5 !text-sm !font-semibold !text-slate-700">
+                Address
+              </Typography>
+
               <TextField
                 fullWidth
                 disabled={modalMode === 'view'}
@@ -502,7 +749,10 @@ export function PropertyListPage() {
                   input: {
                     startAdornment: (
                       <InputAdornment position="start">
-                        <LocationOnOutlined className="text-slate-400" fontSize="small" />
+                        <LocationOnOutlined
+                          className="text-slate-400"
+                          fontSize="small"
+                        />
                       </InputAdornment>
                     ),
                     className: 'rounded-xl',
@@ -512,7 +762,10 @@ export function PropertyListPage() {
             </Box>
 
             <Box>
-              <Typography className="!mb-1.5 !text-sm !font-semibold !text-slate-700">Base Price (₹)</Typography>
+              <Typography className="!mb-1.5 !text-sm !font-semibold !text-slate-700">
+                Base Price (₹)
+              </Typography>
+
               <TextField
                 fullWidth
                 disabled={modalMode === 'view'}
@@ -525,7 +778,10 @@ export function PropertyListPage() {
                   input: {
                     startAdornment: (
                       <InputAdornment position="start">
-                        <CurrencyRupee className="text-slate-400" fontSize="small" />
+                        <CurrencyRupee
+                          className="text-slate-400"
+                          fontSize="small"
+                        />
                       </InputAdornment>
                     ),
                     className: 'rounded-xl',
@@ -535,43 +791,60 @@ export function PropertyListPage() {
             </Box>
 
             <Box>
-              <Typography className="!mb-1.5 !text-sm !font-semibold !text-slate-700">Property Status</Typography>
+              <Typography className="!mb-1.5 !text-sm !font-semibold !text-slate-700">
+                Property Status
+              </Typography>
+
               <Box className="flex items-center gap-2">
                 <Chip
                   label={
                     modalMode === 'create'
                       ? 'Available (Default)'
-                      : PROPERTY_STATUS_CONFIG[selectedProperty?.status || 'available'].label
+                      : PROPERTY_STATUS_CONFIG[
+                          selectedProperty?.status || 'available'
+                        ].label
                   }
                   color={
                     modalMode === 'create'
                       ? 'success'
-                      : PROPERTY_STATUS_CONFIG[selectedProperty?.status || 'available'].color
+                      : PROPERTY_STATUS_CONFIG[
+                          selectedProperty?.status || 'available'
+                        ].color
                   }
                   size="medium"
                   sx={{ fontWeight: 600 }}
                 />
+
                 <Typography variant="caption" className="!text-slate-500">
                   Status cannot be manually edited. Updated via deal workflow.
                 </Typography>
               </Box>
             </Box>
 
-            <Box className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+            <Box className="flex justify-end gap-3 border-t border-slate-100 pt-4">
               <Button
                 onClick={closeModal}
                 variant="outlined"
-                sx={{ borderRadius: '10px', textTransform: 'none' }}
+                sx={{
+                  borderRadius: '10px',
+                  textTransform: 'none',
+                }}
               >
                 {modalMode === 'view' ? 'Close' : 'Cancel'}
               </Button>
+
               {modalMode !== 'view' && (
                 <Button
                   type="submit"
                   variant="contained"
-                  sx={{ borderRadius: '10px', textTransform: 'none' }}
+                  sx={{
+                    borderRadius: '10px',
+                    textTransform: 'none',
+                  }}
                 >
-                  {modalMode === 'create' ? 'Create Property' : 'Save Changes'}
+                  {modalMode === 'create'
+                    ? 'Create Property'
+                    : 'Save Changes'}
                 </Button>
               )}
             </Box>
@@ -579,6 +852,7 @@ export function PropertyListPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Success notification */}
       <Snackbar
         open={Boolean(toastMessage)}
         autoHideDuration={4000}
