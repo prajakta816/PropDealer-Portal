@@ -28,9 +28,12 @@ import {
   DeleteOutlined,
   EditOutlined,
   EmailOutlined,
+  FilterList,
   KeyOutlined,
   Person,
   PersonOutlined,
+  RestartAlt,
+  Search,
   Visibility,
   VisibilityOff,
   VisibilityOutlined,
@@ -73,12 +76,26 @@ const ROLE_GRADIENTS: Record<UserRole, string> = {
 
 type ModalMode = 'create' | 'edit' | 'view' | null
 
+// Fields the user can sort by
+type SortField = 'name' | 'email' | 'role'
+
+// Direction in which the selected field will be sorted
+type SortDirection = 'asc' | 'desc'
+
 export function UserListPage() {
   const [users, setUsers] = useState<User[]>(loadUsers)
   const [modalMode, setModalMode] = useState<ModalMode>(null)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [userToDelete, setUserToDelete] = useState<User | null>(null)
+
+  // Search and filter state
+  const [searchQuery, setSearchQuery] = useState('')
+  const [roleFilter, setRoleFilter] = useState<string>('all')
+
+  // Sorting state
+  const [sortField, setSortField] = useState<SortField>('name')
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
 
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -91,6 +108,62 @@ export function UserListPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null)
   const [toastSeverity, setToastSeverity] = useState<'success' | 'error'>('success')
 
+  // Field-specific validation error states
+  const [nameError, setNameError] = useState<string | null>(null)
+  const [emailError, setEmailError] = useState<string | null>(null)
+  const [passwordError, setPasswordError] = useState<string | null>(null)
+  const [confirmPasswordError, setConfirmPasswordError] = useState<string | null>(null)
+
+  // STEP 1: Filter users by search query (name/email) and role filter
+  const query = searchQuery.trim().toLowerCase()
+
+  const filteredUsers = users.filter((user) => {
+    const matchesSearch =
+      !query ||
+      user.name.toLowerCase().includes(query) ||
+      user.email.toLowerCase().includes(query)
+
+    const matchesRole =
+      roleFilter === 'all' || user.role === roleFilter
+
+    return matchesSearch && matchesRole
+  })
+
+  // STEP 2: Sort a copy of the filtered results
+  const sortedUsers = [...filteredUsers].sort((a, b) => {
+    let result = 0
+
+    switch (sortField) {
+      case 'name':
+        result = a.name.localeCompare(b.name)
+        break
+      case 'email':
+        result = a.email.localeCompare(b.email)
+        break
+      case 'role':
+        result = a.role.localeCompare(b.role)
+        break
+    }
+
+    return sortDirection === 'asc' ? result : -result
+  })
+
+  // Reset filters and sorting to defaults
+  const handleClearFilters = () => {
+    setSearchQuery('')
+    setRoleFilter('all')
+    setSortField('name')
+    setSortDirection('asc')
+  }
+
+  const clearErrors = () => {
+    setErrorMessage(null)
+    setNameError(null)
+    setEmailError(null)
+    setPasswordError(null)
+    setConfirmPasswordError(null)
+  }
+
   const resetForm = () => {
     setName('')
     setEmail('')
@@ -98,7 +171,7 @@ export function UserListPage() {
     setPassword('')
     setConfirmPassword('')
     setShowPassword(false)
-    setErrorMessage(null)
+    clearErrors()
   }
 
   const openCreate = () => {
@@ -115,7 +188,7 @@ export function UserListPage() {
     setPassword('')
     setConfirmPassword('')
     setShowPassword(false)
-    setErrorMessage(null)
+    clearErrors()
     setModalMode('edit')
   }
 
@@ -150,37 +223,62 @@ export function UserListPage() {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    setErrorMessage(null)
+    clearErrors()
 
+    let hasError = false
+
+    // 1. Full name validation
     if (!name.trim()) {
-      setErrorMessage('Full name is required.')
-      return
+      setNameError('Full name is required.')
+      hasError = true
     }
 
+    // 2. Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(email.trim())) {
-      setErrorMessage('Please enter a valid email address.')
-      return
+    if (!email.trim()) {
+      setEmailError('Email address is required.')
+      hasError = true
+    } else if (!emailRegex.test(email.trim())) {
+      setEmailError('Please enter a valid email address.')
+      hasError = true
     }
 
+    // 3. Password validation for Create mode
     if (modalMode === 'create') {
+      if (!password) {
+        setPasswordError('Password is required.')
+        hasError = true
+      } else if (password.length < 6) {
+        setPasswordError('Password must be at least 6 characters.')
+        hasError = true
+      }
+
+      if (!confirmPassword) {
+        setConfirmPasswordError('Please confirm your password.')
+        hasError = true
+      } else if (password !== confirmPassword) {
+        setConfirmPasswordError('Passwords do not match.')
+        hasError = true
+      }
+    }
+
+    // 4. Password validation for Edit mode (optional)
+    if (modalMode === 'edit' && password) {
       if (password.length < 6) {
-        setErrorMessage('Password must be at least 6 characters.')
-        return
+        setPasswordError('New password must be at least 6 characters.')
+        hasError = true
       }
-      if (password !== confirmPassword) {
-        setErrorMessage('Passwords do not match.')
-        return
+
+      if (!confirmPassword) {
+        setConfirmPasswordError('Please confirm your new password.')
+        hasError = true
+      } else if (password !== confirmPassword) {
+        setConfirmPasswordError('Passwords do not match.')
+        hasError = true
       }
     }
 
-    if (modalMode === 'edit' && password && password.length < 6) {
-      setErrorMessage('New password must be at least 6 characters.')
-      return
-    }
-
-    if (modalMode === 'edit' && password && password !== confirmPassword) {
-      setErrorMessage('Passwords do not match.')
+    if (hasError) {
       return
     }
 
@@ -459,6 +557,151 @@ export function UserListPage() {
           </Box>
         </Box>
 
+        {/* Search, Filter & Sort toolbar */}
+        <Box
+          sx={{
+            background: '#fff',
+            borderRadius: '20px',
+            border: '1px solid #e2e8f0',
+            p: { xs: 2, md: 3 },
+            mb: 3,
+            boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
+          }}
+        >
+          {/* Search bar */}
+          <Box className="mb-5">
+            <Typography
+              variant="subtitle1"
+              sx={{
+                fontWeight: 700,
+                color: '#0f172a',
+                mb: 1.5,
+              }}
+            >
+              Search Users
+            </Typography>
+
+            <TextField
+              fullWidth
+              placeholder="Search users by name or email..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              size="small"
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search
+                        className="text-slate-400"
+                        fontSize="small"
+                      />
+                    </InputAdornment>
+                  ),
+                  className: 'rounded-xl',
+                },
+              }}
+            />
+          </Box>
+
+          {/* Filter & Sort controls */}
+          <Box
+            sx={{
+              borderTop: '1px solid #e2e8f0',
+              pt: 2.5,
+            }}
+          >
+            <Box className="mb-3 flex items-center gap-2">
+              <FilterList sx={{ color: '#2563eb' }} />
+
+              <Typography
+                variant="subtitle1"
+                sx={{ fontWeight: 700, color: '#0f172a' }}
+              >
+                Filter & Sort
+              </Typography>
+            </Box>
+
+            <Box className="flex flex-col gap-3 md:flex-row md:items-center">
+              <TextField
+                select
+                fullWidth
+                label="Filter by Role"
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value)}
+                size="small"
+              >
+                <MenuItem value="all">All Roles</MenuItem>
+                <MenuItem value={ROLES.ADMIN}>Admin</MenuItem>
+                <MenuItem value={ROLES.AGENT}>Agent</MenuItem>
+                <MenuItem value={ROLES.COMMISSION_MANAGER}>Commission Manager</MenuItem>
+                <MenuItem value={ROLES.BUYER}>Buyer</MenuItem>
+              </TextField>
+
+              <TextField
+                select
+                fullWidth
+                label="Sort by"
+                value={sortField}
+                onChange={(e) =>
+                  setSortField(e.target.value as SortField)
+                }
+                size="small"
+              >
+                <MenuItem value="name">Name</MenuItem>
+                <MenuItem value="email">Email</MenuItem>
+                <MenuItem value="role">Role</MenuItem>
+              </TextField>
+
+              <TextField
+                select
+                fullWidth
+                label="Order"
+                value={sortDirection}
+                onChange={(e) =>
+                  setSortDirection(
+                    e.target.value as SortDirection,
+                  )
+                }
+                size="small"
+              >
+                <MenuItem value="asc">
+                  Ascending (A–Z)
+                </MenuItem>
+                <MenuItem value="desc">
+                  Descending (Z–A)
+                </MenuItem>
+              </TextField>
+
+              <Button
+                onClick={handleClearFilters}
+                variant="outlined"
+                startIcon={<RestartAlt />}
+                sx={{
+                  minWidth: { xs: '100%', md: '160px' },
+                  py: 1,
+                  borderRadius: '10px',
+                  textTransform: 'none',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Clear Filters
+              </Button>
+            </Box>
+
+            <Typography
+              variant="caption"
+              sx={{
+                display: 'block',
+                mt: 1.5,
+                color: '#64748b',
+              }}
+            >
+              {/* Showing {sortedUsers.length} of {users.length}{' '}
+              users */}
+            </Typography>
+          </Box>
+        </Box>
+
         <Box
           sx={{
             background: '#fff',
@@ -507,7 +750,7 @@ export function UserListPage() {
             }}
           >
             <DataGrid
-              rows={users}
+              rows={sortedUsers}
               columns={columns}
               getRowId={(row) => row.id}
               pageSizeOptions={[5, 10, 25]}
@@ -556,12 +799,20 @@ export function UserListPage() {
 
           <Box component="form" id="user-form" onSubmit={handleSubmit} noValidate className="space-y-4">
             <Box>
-              <Typography className="!mb-1.5 !text-sm !font-semibold !text-slate-700">Full Name</Typography>
+              <Typography className="!mb-1.5 !text-sm !font-semibold !text-slate-700">
+                Full Name <span className="text-rose-500">*</span>
+              </Typography>
               <TextField
                 fullWidth
                 placeholder="e.g. John Doe"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value)
+                  if (nameError) setNameError(null)
+                  if (errorMessage) setErrorMessage(null)
+                }}
+                error={Boolean(nameError)}
+                helperText={nameError}
                 size="small"
                 slotProps={{
                   input: {
@@ -577,13 +828,21 @@ export function UserListPage() {
             </Box>
 
             <Box>
-              <Typography className="!mb-1.5 !text-sm !font-semibold !text-slate-700">Email Address</Typography>
+              <Typography className="!mb-1.5 !text-sm !font-semibold !text-slate-700">
+                Email Address <span className="text-rose-500">*</span>
+              </Typography>
               <TextField
                 fullWidth
                 type="email"
                 placeholder="name@propdealer.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value)
+                  if (emailError) setEmailError(null)
+                  if (errorMessage) setErrorMessage(null)
+                }}
+                error={Boolean(emailError)}
+                helperText={emailError}
                 size="small"
                 slotProps={{
                   input: {
@@ -599,7 +858,9 @@ export function UserListPage() {
             </Box>
 
             <Box>
-              <Typography className="!mb-1.5 !text-sm !font-semibold !text-slate-700">Assigned Role</Typography>
+              <Typography className="!mb-1.5 !text-sm !font-semibold !text-slate-700">
+                Assigned Role <span className="text-rose-500">*</span>
+              </Typography>
               <FormControl fullWidth size="small">
                 <Select
                   value={role}
@@ -620,14 +881,24 @@ export function UserListPage() {
 
             <Box>
               <Typography className="!mb-1.5 !text-sm !font-semibold !text-slate-700">
-                {modalMode === 'edit' ? 'New Password (optional)' : 'Password'}
+                {modalMode === 'edit' ? 'New Password (optional)' : (
+                  <>
+                    Password <span className="text-rose-500">*</span>
+                  </>
+                )}
               </Typography>
               <TextField
                 fullWidth
                 type={showPassword ? 'text' : 'password'}
                 placeholder={modalMode === 'edit' ? 'Leave blank to keep existing' : 'Minimum 6 characters'}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value)
+                  if (passwordError) setPasswordError(null)
+                  if (errorMessage) setErrorMessage(null)
+                }}
+                error={Boolean(passwordError)}
+                helperText={passwordError}
                 size="small"
                 slotProps={{
                   input: {
@@ -653,14 +924,24 @@ export function UserListPage() {
 
             <Box>
               <Typography className="!mb-1.5 !text-sm !font-semibold !text-slate-700">
-                {modalMode === 'edit' ? 'Confirm New Password' : 'Confirm Password'}
+                {modalMode === 'edit' ? 'Confirm New Password' : (
+                  <>
+                    Confirm Password <span className="text-rose-500">*</span>
+                  </>
+                )}
               </Typography>
               <TextField
                 fullWidth
                 type={showPassword ? 'text' : 'password'}
                 placeholder="Re-enter password"
                 value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                onChange={(e) => {
+                  setConfirmPassword(e.target.value)
+                  if (confirmPasswordError) setConfirmPasswordError(null)
+                  if (errorMessage) setErrorMessage(null)
+                }}
+                error={Boolean(confirmPasswordError)}
+                helperText={confirmPasswordError}
                 size="small"
                 slotProps={{
                   input: {

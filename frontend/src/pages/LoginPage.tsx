@@ -213,7 +213,7 @@ export function LoginPage() {
                   htmlFor="user-email"
                   className="!mb-1.5 !block !text-sm !font-semibold !text-slate-700"
                 >
-                  Email Address
+                  Email Address <span className="text-rose-500">*</span>
                 </Typography>
                 <TextField
                   id="user-email"
@@ -246,7 +246,7 @@ export function LoginPage() {
                     htmlFor="user-password"
                     className="!text-sm !font-semibold !text-slate-700"
                   >
-                    Password
+                    Password <span className="text-rose-500">*</span>
                   </Typography>
                 </Box>
                 <TextField
