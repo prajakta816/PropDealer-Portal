@@ -1,7 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import PublicLayout from '../component/public/PublicLayout'
 import HomePage from '../pages/HomePage'
-import { LoginPage } from '../pages/LoginPage'
+import {LoginPage}  from '../pages/LoginPage'
 import AppLayout from '../component/layout/AppLayout'
 import { DashboardPage } from '../pages/DashboardPage'
 import { UserListPage } from '../pages/UserListPage'
