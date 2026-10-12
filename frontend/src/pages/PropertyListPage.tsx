@@ -88,6 +88,11 @@ export function PropertyListPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
 
+  // Field-specific validation error states
+  const [titleError, setTitleError] = useState<string | null>(null)
+  const [addressError, setAddressError] = useState<string | null>(null)
+  const [basePriceError, setBasePriceError] = useState<string | null>(null)
+
   // STEP 1: Filter properties by search query (title/address) and status filter
   const query = searchQuery.trim().toLowerCase()
 
@@ -137,11 +142,18 @@ export function PropertyListPage() {
     setSortDirection('asc')
   }
 
+  const clearErrors = () => {
+    setErrorMessage(null)
+    setTitleError(null)
+    setAddressError(null)
+    setBasePriceError(null)
+  }
+
   const resetForm = () => {
     setTitle('')
     setAddress('')
     setBasePrice('')
-    setErrorMessage(null)
+    clearErrors()
   }
 
   const openCreate = () => {
@@ -155,7 +167,7 @@ export function PropertyListPage() {
     setTitle(property.title)
     setAddress(property.address)
     setBasePrice(property.basePrice.toString())
-    setErrorMessage(null)
+    clearErrors()
     setModalMode('edit')
   }
 
@@ -164,7 +176,7 @@ export function PropertyListPage() {
     setTitle(property.title)
     setAddress(property.address)
     setBasePrice(property.basePrice.toString())
-    setErrorMessage(null)
+    clearErrors()
     setModalMode('view')
   }
 
@@ -176,22 +188,33 @@ export function PropertyListPage() {
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    setErrorMessage(null)
+    clearErrors()
 
+    let hasError = false
+
+    // 1. Property title validation
     if (!title.trim()) {
-      setErrorMessage('Property title is required.')
-      return
+      setTitleError('Property title is required.')
+      hasError = true
     }
 
+    // 2. Property address validation
     if (!address.trim()) {
-      setErrorMessage('Property address is required.')
-      return
+      setAddressError('Property address is required.')
+      hasError = true
     }
 
+    // 3. Base price validation
     const parsedPrice = Number(basePrice)
+    if (!basePrice.trim()) {
+      setBasePriceError('Base price is required.')
+      hasError = true
+    } else if (isNaN(parsedPrice) || parsedPrice <= 0) {
+      setBasePriceError('Please enter a valid positive base price.')
+      hasError = true
+    }
 
-    if (!basePrice || isNaN(parsedPrice) || parsedPrice <= 0) {
-      setErrorMessage('Please enter a valid positive base price.')
+    if (hasError) {
       return
     }
 
@@ -725,7 +748,7 @@ export function PropertyListPage() {
 
             <Box>
               <Typography className="!mb-1.5 !text-sm !font-semibold !text-slate-700">
-                Title
+                Title <span className="text-rose-500">*</span>
               </Typography>
 
               <TextField
@@ -733,7 +756,13 @@ export function PropertyListPage() {
                 disabled={modalMode === 'view'}
                 placeholder="e.g. Skyline Luxury Apartment"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => {
+                  setTitle(e.target.value)
+                  if (titleError) setTitleError(null)
+                  if (errorMessage) setErrorMessage(null)
+                }}
+                error={Boolean(titleError)}
+                helperText={titleError}
                 size="small"
                 slotProps={{
                   input: {
@@ -753,7 +782,7 @@ export function PropertyListPage() {
 
             <Box>
               <Typography className="!mb-1.5 !text-sm !font-semibold !text-slate-700">
-                Address
+                Address <span className="text-rose-500">*</span>
               </Typography>
 
               <TextField
@@ -761,7 +790,13 @@ export function PropertyListPage() {
                 disabled={modalMode === 'view'}
                 placeholder="e.g. 42 Marine Drive, Mumbai"
                 value={address}
-                onChange={(e) => setAddress(e.target.value)}
+                onChange={(e) => {
+                  setAddress(e.target.value)
+                  if (addressError) setAddressError(null)
+                  if (errorMessage) setErrorMessage(null)
+                }}
+                error={Boolean(addressError)}
+                helperText={addressError}
                 size="small"
                 slotProps={{
                   input: {
@@ -781,7 +816,7 @@ export function PropertyListPage() {
 
             <Box>
               <Typography className="!mb-1.5 !text-sm !font-semibold !text-slate-700">
-                Base Price (₹)
+                Base Price (₹) <span className="text-rose-500">*</span>
               </Typography>
 
               <TextField
@@ -790,7 +825,13 @@ export function PropertyListPage() {
                 type="number"
                 placeholder="e.g. 8500000"
                 value={basePrice}
-                onChange={(e) => setBasePrice(e.target.value)}
+                onChange={(e) => {
+                  setBasePrice(e.target.value)
+                  if (basePriceError) setBasePriceError(null)
+                  if (errorMessage) setErrorMessage(null)
+                }}
+                error={Boolean(basePriceError)}
+                helperText={basePriceError}
                 size="small"
                 slotProps={{
                   input: {
@@ -832,10 +873,6 @@ export function PropertyListPage() {
                   size="medium"
                   sx={{ fontWeight: 600 }}
                 />
-
-                <Typography variant="caption" className="!text-slate-500">
-                  Status cannot be manually edited. Updated via deal workflow.
-                </Typography>
               </Box>
             </Box>
 
