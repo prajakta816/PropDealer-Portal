@@ -28,9 +28,12 @@ import {
   DeleteOutlined,
   EditOutlined,
   EmailOutlined,
+  FilterList,
   KeyOutlined,
   Person,
   PersonOutlined,
+  RestartAlt,
+  Search,
   Visibility,
   VisibilityOff,
   VisibilityOutlined,
@@ -73,12 +76,26 @@ const ROLE_GRADIENTS: Record<UserRole, string> = {
 
 type ModalMode = 'create' | 'edit' | 'view' | null
 
+// Fields the user can sort by
+type SortField = 'name' | 'email' | 'role'
+
+// Direction in which the selected field will be sorted
+type SortDirection = 'asc' | 'desc'
+
 export function UserListPage() {
   const [users, setUsers] = useState<User[]>(loadUsers)
   const [modalMode, setModalMode] = useState<ModalMode>(null)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [userToDelete, setUserToDelete] = useState<User | null>(null)
+
+  // Search and filter state
+  const [searchQuery, setSearchQuery] = useState('')
+  const [roleFilter, setRoleFilter] = useState<string>('all')
+
+  // Sorting state
+  const [sortField, setSortField] = useState<SortField>('name')
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
 
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -90,6 +107,48 @@ export function UserListPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
   const [toastSeverity, setToastSeverity] = useState<'success' | 'error'>('success')
+
+  // STEP 1: Filter users by search query (name/email) and role filter
+  const query = searchQuery.trim().toLowerCase()
+
+  const filteredUsers = users.filter((user) => {
+    const matchesSearch =
+      !query ||
+      user.name.toLowerCase().includes(query) ||
+      user.email.toLowerCase().includes(query)
+
+    const matchesRole =
+      roleFilter === 'all' || user.role === roleFilter
+
+    return matchesSearch && matchesRole
+  })
+
+  // STEP 2: Sort a copy of the filtered results
+  const sortedUsers = [...filteredUsers].sort((a, b) => {
+    let result = 0
+
+    switch (sortField) {
+      case 'name':
+        result = a.name.localeCompare(b.name)
+        break
+      case 'email':
+        result = a.email.localeCompare(b.email)
+        break
+      case 'role':
+        result = a.role.localeCompare(b.role)
+        break
+    }
+
+    return sortDirection === 'asc' ? result : -result
+  })
+
+  // Reset filters and sorting to defaults
+  const handleClearFilters = () => {
+    setSearchQuery('')
+    setRoleFilter('all')
+    setSortField('name')
+    setSortDirection('asc')
+  }
 
   const resetForm = () => {
     setName('')
@@ -459,6 +518,151 @@ export function UserListPage() {
           </Box>
         </Box>
 
+        {/* Search, Filter & Sort toolbar */}
+        <Box
+          sx={{
+            background: '#fff',
+            borderRadius: '20px',
+            border: '1px solid #e2e8f0',
+            p: { xs: 2, md: 3 },
+            mb: 3,
+            boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
+          }}
+        >
+          {/* Search bar */}
+          <Box className="mb-5">
+            <Typography
+              variant="subtitle1"
+              sx={{
+                fontWeight: 700,
+                color: '#0f172a',
+                mb: 1.5,
+              }}
+            >
+              Search Users
+            </Typography>
+
+            <TextField
+              fullWidth
+              placeholder="Search users by name or email..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              size="small"
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search
+                        className="text-slate-400"
+                        fontSize="small"
+                      />
+                    </InputAdornment>
+                  ),
+                  className: 'rounded-xl',
+                },
+              }}
+            />
+          </Box>
+
+          {/* Filter & Sort controls */}
+          <Box
+            sx={{
+              borderTop: '1px solid #e2e8f0',
+              pt: 2.5,
+            }}
+          >
+            <Box className="mb-3 flex items-center gap-2">
+              <FilterList sx={{ color: '#2563eb' }} />
+
+              <Typography
+                variant="subtitle1"
+                sx={{ fontWeight: 700, color: '#0f172a' }}
+              >
+                Filter & Sort
+              </Typography>
+            </Box>
+
+            <Box className="flex flex-col gap-3 md:flex-row md:items-center">
+              <TextField
+                select
+                fullWidth
+                label="Filter by Role"
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value)}
+                size="small"
+              >
+                <MenuItem value="all">All Roles</MenuItem>
+                <MenuItem value={ROLES.ADMIN}>Admin</MenuItem>
+                <MenuItem value={ROLES.AGENT}>Agent</MenuItem>
+                <MenuItem value={ROLES.COMMISSION_MANAGER}>Commission Manager</MenuItem>
+                <MenuItem value={ROLES.BUYER}>Buyer</MenuItem>
+              </TextField>
+
+              <TextField
+                select
+                fullWidth
+                label="Sort by"
+                value={sortField}
+                onChange={(e) =>
+                  setSortField(e.target.value as SortField)
+                }
+                size="small"
+              >
+                <MenuItem value="name">Name</MenuItem>
+                <MenuItem value="email">Email</MenuItem>
+                <MenuItem value="role">Role</MenuItem>
+              </TextField>
+
+              <TextField
+                select
+                fullWidth
+                label="Order"
+                value={sortDirection}
+                onChange={(e) =>
+                  setSortDirection(
+                    e.target.value as SortDirection,
+                  )
+                }
+                size="small"
+              >
+                <MenuItem value="asc">
+                  Ascending (A–Z)
+                </MenuItem>
+                <MenuItem value="desc">
+                  Descending (Z–A)
+                </MenuItem>
+              </TextField>
+
+              <Button
+                onClick={handleClearFilters}
+                variant="outlined"
+                startIcon={<RestartAlt />}
+                sx={{
+                  minWidth: { xs: '100%', md: '160px' },
+                  py: 1,
+                  borderRadius: '10px',
+                  textTransform: 'none',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Clear Filters
+              </Button>
+            </Box>
+
+            <Typography
+              variant="caption"
+              sx={{
+                display: 'block',
+                mt: 1.5,
+                color: '#64748b',
+              }}
+            >
+              {/* Showing {sortedUsers.length} of {users.length}{' '}
+              users */}
+            </Typography>
+          </Box>
+        </Box>
+
         <Box
           sx={{
             background: '#fff',
@@ -507,7 +711,7 @@ export function UserListPage() {
             }}
           >
             <DataGrid
-              rows={users}
+              rows={sortedUsers}
               columns={columns}
               getRowId={(row) => row.id}
               pageSizeOptions={[5, 10, 25]}

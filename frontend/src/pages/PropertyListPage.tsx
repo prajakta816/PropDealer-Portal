@@ -22,11 +22,11 @@ import {
   Close,
   CurrencyRupee,
   EditOutlined,
+  FilterList,
   HomeWorkOutlined,
   LocationOnOutlined,
   RestartAlt,
   Search,
-  Sort,
   VisibilityOutlined,
 } from '@mui/icons-material'
 import {
@@ -74,8 +74,9 @@ export function PropertyListPage() {
   const [modalMode, setModalMode] = useState<ModalMode>(null)
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
 
-  // Existing search functionality — unchanged.
+  // Search and filter state
   const [searchQuery, setSearchQuery] = useState('')
+  const [statusFilter, setStatusFilter] = useState<string>('all')
 
   // Sorting state.
   const [sortField, setSortField] = useState<SortField>('title')
@@ -87,18 +88,19 @@ export function PropertyListPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
 
-  // STEP 1: Filter properties using the existing title/address search.
+  // STEP 1: Filter properties by search query (title/address) and status filter
   const query = searchQuery.trim().toLowerCase()
 
   const filteredProperties = properties.filter((property) => {
-    if (!query) {
-      return true
-    }
-
-    return (
+    const matchesSearch =
+      !query ||
       property.title.toLowerCase().includes(query) ||
       property.address.toLowerCase().includes(query)
-    )
+
+    const matchesStatus =
+      statusFilter === 'all' || property.status === statusFilter
+
+    return matchesSearch && matchesStatus
   })
 
   // STEP 2: Sort a copy of the filtered results.
@@ -127,8 +129,10 @@ export function PropertyListPage() {
     return sortDirection === 'asc' ? result : -result
   })
 
-  // Reset sorting to the default values.
-  const handleClearSorting = () => {
+  // Reset filters and sorting to defaults
+  const handleClearFilters = () => {
+    setSearchQuery('')
+    setStatusFilter('all')
     setSortField('title')
     setSortDirection('asc')
   }
@@ -444,7 +448,7 @@ export function PropertyListPage() {
           </Box>
         </Box>
 
-        {/* Existing search + new sorting controls */}
+        {/* Search, Filter & Sort toolbar */}
         <Box
           sx={{
             background: '#fff',
@@ -455,7 +459,7 @@ export function PropertyListPage() {
             boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
           }}
         >
-          {/* Existing search — unchanged */}
+          {/* Search bar */}
           <Box className="mb-5">
             <Typography
               variant="subtitle1"
@@ -490,7 +494,7 @@ export function PropertyListPage() {
             />
           </Box>
 
-          {/* New sorting controls */}
+          {/* Filter & Sort controls */}
           <Box
             sx={{
               borderTop: '1px solid #e2e8f0',
@@ -498,17 +502,31 @@ export function PropertyListPage() {
             }}
           >
             <Box className="mb-3 flex items-center gap-2">
-              <Sort sx={{ color: '#2563eb' }} />
+              <FilterList sx={{ color: '#2563eb' }} />
 
               <Typography
                 variant="subtitle1"
                 sx={{ fontWeight: 700, color: '#0f172a' }}
               >
-                Sort Properties
+                Filter & Sort
               </Typography>
             </Box>
 
             <Box className="flex flex-col gap-3 md:flex-row md:items-center">
+              <TextField
+                select
+                fullWidth
+                label="Filter by Status"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                size="small"
+              >
+                <MenuItem value="all">All Statuses</MenuItem>
+                <MenuItem value="available">Available</MenuItem>
+                <MenuItem value="under_negotiation">Under Negotiation</MenuItem>
+                <MenuItem value="sold">Sold</MenuItem>
+              </TextField>
+
               <TextField
                 select
                 fullWidth
@@ -546,18 +564,18 @@ export function PropertyListPage() {
               </TextField>
 
               <Button
-                onClick={handleClearSorting}
+                onClick={handleClearFilters}
                 variant="outlined"
                 startIcon={<RestartAlt />}
                 sx={{
-                  minWidth: { xs: '100%', md: '155px' },
+                  minWidth: { xs: '100%', md: '160px' },
                   py: 1,
                   borderRadius: '10px',
                   textTransform: 'none',
                   whiteSpace: 'nowrap',
                 }}
               >
-                Clear Sorting
+                Clear Filters
               </Button>
             </Box>
 
@@ -569,8 +587,8 @@ export function PropertyListPage() {
                 color: '#64748b',
               }}
             >
-              Showing {sortedProperties.length} of {properties.length}{' '}
-              properties
+              {/* Showing {sortedProperties.length} of {properties.length}{' '}
+              properties */}
             </Typography>
           </Box>
         </Box>
