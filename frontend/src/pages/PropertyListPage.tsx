@@ -46,10 +46,7 @@ import {
 
 type ModalMode = 'create' | 'edit' | 'view' | null
 
-// Fields the user can sort by.
 type SortField = 'title' | 'address' | 'basePrice' | 'status'
-
-// Direction in which the selected field will be sorted.
 type SortDirection = 'asc' | 'desc'
 
 function loadProperties(): Property[] {
@@ -108,7 +105,6 @@ export function PropertyListPage() {
     return matchesSearch && matchesStatus
   })
 
-  // STEP 2: Sort a copy of the filtered results.
   // We copy the array so the original properties state is not mutated.
   const sortedProperties = [...filteredProperties].sort((a, b) => {
     let result = 0
@@ -221,7 +217,24 @@ export function PropertyListPage() {
     const rawData = localStorage.getItem(PROPERTIES_STORAGE_KEY)
     const existing: Property[] = rawData ? JSON.parse(rawData) : []
 
+    // 4. Duplicate check: check if a property with the same title and address already exists
+    const trimmedTitle = title.trim().toLowerCase()
+    const trimmedAddress = address.trim().toLowerCase()
+
     if (modalMode === 'create') {
+      const isDuplicate = existing.some(
+        (p) =>
+          p.title.trim().toLowerCase() === trimmedTitle &&
+          p.address.trim().toLowerCase() === trimmedAddress
+      )
+
+      if (isDuplicate) {
+        setErrorMessage('A property with this title and address already exists.')
+        setTitleError('Title already used for this address.')
+        setAddressError('Address already used for this title.')
+        return
+      }
+
       const newProperty: Property = {
         id: `prop_${Date.now()}`,
         title: title.trim(),
@@ -247,6 +260,20 @@ export function PropertyListPage() {
     }
 
     if (modalMode === 'edit' && selectedProperty) {
+      const isDuplicate = existing.some(
+        (p) =>
+          p.id !== selectedProperty.id &&
+          p.title.trim().toLowerCase() === trimmedTitle &&
+          p.address.trim().toLowerCase() === trimmedAddress
+      )
+
+      if (isDuplicate) {
+        setErrorMessage('Another property with this title and address already exists.')
+        setTitleError('Title already used for this address.')
+        setAddressError('Address already used for this title.')
+        return
+      }
+
       const updated = existing.map((property) => {
         if (property.id !== selectedProperty.id) {
           return property
@@ -311,7 +338,7 @@ export function PropertyListPage() {
           variant="body2"
           sx={{ fontWeight: 600, color: '#0f172a' }}
         >
-          ₹ {Number(params.row.basePrice).toLocaleString('en-IN')}
+          {Number(params.row.basePrice).toLocaleString('en-IN')}
         </Typography>
       ),
     },
@@ -816,7 +843,7 @@ export function PropertyListPage() {
 
             <Box>
               <Typography className="!mb-1.5 !text-sm !font-semibold !text-slate-700">
-                Base Price (₹) <span className="text-rose-500">*</span>
+                Base Price  <span className="text-rose-500">*</span>
               </Typography>
 
               <TextField
