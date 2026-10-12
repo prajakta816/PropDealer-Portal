@@ -25,6 +25,7 @@ import { useAuth } from '../../context'
 interface HeaderProps {
   role?: UserRole
   userName?: string
+  isSidebarCollapsed?: boolean
 }
 
 interface RoleVisualConfig {
@@ -61,7 +62,7 @@ const ROLE_VISUALS: Record<UserRole, RoleVisualConfig> = {
   },
 }
 
-function Header({ role, userName }: HeaderProps) {
+function Header({ role, userName, isSidebarCollapsed = false }: HeaderProps) {
   const navigate = useNavigate()
   const { user, logout } = useAuth()
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
@@ -105,10 +106,12 @@ function Header({ role, userName }: HeaderProps) {
           component="h1"
           className="font-extrabold tracking-tight text-slate-900"
           sx={{
-            display: {
-              xs: 'block',
-              md: 'none',
-            },
+            display: isSidebarCollapsed
+              ? 'block'
+              : {
+                  xs: 'block',
+                  md: 'none',
+                },
           }}
         >
           PropDealer

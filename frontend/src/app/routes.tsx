@@ -5,6 +5,7 @@ import { LoginPage } from '../pages/LoginPage'
 import AppLayout from '../component/layout/AppLayout'
 import { DashboardPage } from '../pages/DashboardPage'
 import { UserListPage } from '../pages/UserListPage'
+import { PropertyListPage } from '../pages/PropertyListPage'
 import { PlaceholderPage } from '../pages/PlaceholderPage'
 import { ProtectedRoute } from './guards/ProtectedRoute'
 import { PublicOnlyRoute } from './guards/PublicOnlyRoute'
@@ -84,11 +85,8 @@ function AppRoutes() {
           <Route
             path="/properties"
             element={
-              <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.AGENT, ROLES.BUYER]}>
-                <PlaceholderPage
-                  title="Property Directory"
-                  description="Listings, commercial units, and residential properties under management."
-                />
+              <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.AGENT]}>
+                <PropertyListPage />
               </ProtectedRoute>
             }
           />
