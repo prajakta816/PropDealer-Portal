@@ -758,8 +758,8 @@ export function UserListPage() {
                 pagination: { paginationModel: { pageSize: 5 } },
               }}
               autoHeight
-              disableColumnSorting
-              disableColumnMenu
+              //disableColumnSorting
+              //disableColumnMenu
               disableRowSelectionOnClick
               rowHeight={72}
             />
