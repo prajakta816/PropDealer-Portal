@@ -193,7 +193,7 @@ export function LoginPage() {
                 Sign in to PropDealer
               </Typography>
               <Typography variant="body2" className="!mt-2 !text-slate-500">
-                Enter your corporate credentials to access your dashboard.
+                Enter your  credentials to access your dashboard.
               </Typography>
             </Box>
 

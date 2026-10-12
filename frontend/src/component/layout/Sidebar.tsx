@@ -9,6 +9,7 @@ import {
   ListItemIcon,
   ListItemText,
   Toolbar,
+  Tooltip,
   Typography,
 } from '@mui/material'
 import { Apartment } from '@mui/icons-material'
@@ -17,13 +18,22 @@ import type { UserRole } from '../../constants/roles'
 
 interface SidebarProps {
   role: UserRole
+  isCollapsed?: boolean
 }
 
-const desktopDrawerWidth = 260
-const miniDrawerWidth = 80
+// Sidebar width constants as per requirement
+const EXPANDED_WIDTH = 240
+const COLLAPSED_WIDTH = 64
 
-function Sidebar({ role }: SidebarProps) {
+function Sidebar({ role, isCollapsed = false }: SidebarProps) {
   const location = useLocation()
+
+  // On screens below 900px (md), sidebar shrinks to icon-only (64px) automatically.
+  // On screens 900px and above, it respects isCollapsed (240px expanded, 64px collapsed).
+  const responsiveWidth = {
+    xs: COLLAPSED_WIDTH,
+    md: isCollapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH,
+  }
 
   const filteredSections = useMemo(
     () =>
@@ -41,12 +51,12 @@ function Sidebar({ role }: SidebarProps) {
   const drawerContent = (
     <Box className="flex h-full flex-col">
       <Toolbar
-        className="flex items-center gap-3 px-5"
+        className="flex items-center gap-3"
         sx={{
-          '@media (max-width: 900px)': {
-            justifyContent: 'center',
-            px: 1,
-          },
+          px: isCollapsed ? 1.5 : { xs: 1.5, md: 2.5 },
+          justifyContent: isCollapsed ? 'center' : { xs: 'center', md: 'flex-start' },
+          minHeight: 64,
+          transition: 'padding 200ms ease',
         }}
       >
         <Box
@@ -61,11 +71,11 @@ function Sidebar({ role }: SidebarProps) {
           />
         </Box>
 
+        {/* Hide brand name and role badge when sidebar is collapsed OR on mobile/small screens */}
         <Box
+          className="overflow-hidden whitespace-nowrap"
           sx={{
-            '@media (max-width: 900px)': {
-              display: 'none',
-            },
+            display: isCollapsed ? 'none' : { xs: 'none', md: 'block' },
           }}
         >
           <Typography
@@ -104,20 +114,25 @@ function Sidebar({ role }: SidebarProps) {
 
       <Divider />
 
-      <Box className="flex-1 overflow-y-auto px-3 py-4">
+      <Box
+        className="flex-1 overflow-y-auto"
+        sx={{
+          px: isCollapsed ? 1 : { xs: 1, md: 1.5 },
+          py: 2,
+        }}
+      >
         {filteredSections.map((section) => (
           <Box
             key={section.title}
             className="mb-5"
           >
+            {/* Section title hidden when collapsed or on small screens */}
             <Typography
               variant="caption"
               color="text.secondary"
               className="mb-2 block px-3 font-semibold uppercase tracking-wider"
               sx={{
-                '@media (max-width: 900px)': {
-                  display: 'none',
-                },
+                display: isCollapsed ? 'none' : { xs: 'none', md: 'block' },
               }}
             >
               {section.title}
@@ -128,7 +143,8 @@ function Sidebar({ role }: SidebarProps) {
                 const Icon = item.icon
                 const isSelected = location.pathname === item.path
 
-                return (
+                // Button element rendering the menu item icon and conditional text
+                const itemButton = (
                   <ListItemButton
                     key={item.path}
                     component={RouterLink}
@@ -137,10 +153,8 @@ function Sidebar({ role }: SidebarProps) {
                     className="mb-1 rounded-lg"
                     sx={{
                       minHeight: 44,
-                      '@media (max-width: 900px)': {
-                        justifyContent: 'center',
-                        px: 1,
-                      },
+                      px: isCollapsed ? 1 : { xs: 1, md: 2 },
+                      justifyContent: isCollapsed ? 'center' : { xs: 'center', md: 'flex-start' },
                       '&:hover': {
                         backgroundColor: 'action.hover',
                       },
@@ -158,12 +172,9 @@ function Sidebar({ role }: SidebarProps) {
                   >
                     <ListItemIcon
                       sx={{
-                        minWidth: 40,
+                        minWidth: isCollapsed ? 0 : { xs: 0, md: 36 },
+                        justifyContent: 'center',
                         color: 'inherit',
-                        '@media (max-width: 900px)': {
-                          minWidth: 0,
-                          justifyContent: 'center',
-                        },
                       }}
                     >
                       <Icon fontSize="small" />
@@ -176,16 +187,35 @@ function Sidebar({ role }: SidebarProps) {
                           sx: {
                             fontSize: 14,
                             fontWeight: 500,
+                            whiteSpace: 'nowrap',
                           },
                         },
                       }}
                       sx={{
-                        '@media (max-width: 900px)': {
-                          display: 'none',
-                        },
+                        display: isCollapsed ? 'none' : { xs: 'none', md: 'block' },
                       }}
                     />
                   </ListItemButton>
+                )
+
+                // Tooltip shows menu label on hover when collapsed or on small screens
+                return (
+                  <Tooltip
+                    key={item.path}
+                    title={item.label}
+                    placement="right"
+                    arrow
+                    disableHoverListener={!isCollapsed}
+                    sx={{
+                      '@media (min-width: 900px)': {
+                        '&.MuiTooltip-popper': {
+                          display: isCollapsed ? 'block' : 'none',
+                        },
+                      },
+                    }}
+                  >
+                    {itemButton}
+                  </Tooltip>
                 )
               })}
             </List>
@@ -199,20 +229,16 @@ function Sidebar({ role }: SidebarProps) {
     <Drawer
       variant="permanent"
       sx={{
-        width: {
-          xs: miniDrawerWidth,
-          md: desktopDrawerWidth,
-        },
+        width: responsiveWidth,
         flexShrink: 0,
+        transition: 'width 200ms ease',
         '& .MuiDrawer-paper': {
-          width: {
-            xs: miniDrawerWidth,
-            md: desktopDrawerWidth,
-          },
+          width: responsiveWidth,
           boxSizing: 'border-box',
           borderRight: '1px solid',
           borderColor: 'divider',
           transition: 'width 200ms ease',
+          overflowX: 'hidden',
         },
       }}
     >

@@ -73,7 +73,7 @@ export const navigationSections: NavigationSection[] = [
         label: 'Properties',
         path: '/properties',
         icon: Business,
-        allowedRoles: [ROLES.ADMIN, ROLES.AGENT, ROLES.BUYER],
+        allowedRoles: [ROLES.ADMIN, ROLES.AGENT],
       },
       {
         label: 'Commission List',
