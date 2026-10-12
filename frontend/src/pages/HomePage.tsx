@@ -71,8 +71,12 @@ function HomePage() {
                 </Button>
 
                 <Button
-                  component="a"
-                  href="/#features"
+                  onClick={() => {
+                    const el = document.getElementById('features')
+                    if (el) {
+                      el.scrollIntoView({ behavior: 'smooth' })
+                    }
+                  }}
                   variant="outlined"
                   className="rounded-xl border-white/30 px-6 py-3 font-semibold normal-case text-white hover:border-white hover:bg-white/10"
                 >

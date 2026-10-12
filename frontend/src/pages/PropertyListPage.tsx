@@ -714,8 +714,8 @@ export function PropertyListPage() {
                 },
               }}
               autoHeight
-              disableColumnMenu
-              disableColumnSorting
+              //disableColumnMenu
+              //disableColumnSorting
               disableRowSelectionOnClick
               rowHeight={72}
             />

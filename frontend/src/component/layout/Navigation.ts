@@ -113,7 +113,4 @@ export const navigationSections: NavigationSection[] = [
       },
     ],
   },
-
-  // Account section removed because Edit Profile
-  // should no longer appear in the Sidebar.
 ]
