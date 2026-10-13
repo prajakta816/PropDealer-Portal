@@ -95,11 +95,7 @@ function Header({ role, userName, isSidebarCollapsed = false }: HeaderProps) {
   const RoleIcon = roleConfig.Icon
 
   return (
-    <AppBar
-      position="sticky"
-      elevation={0}
-      className="border-b border-slate-200 bg-white/95 backdrop-blur-md"
-    >
+    <AppBar position="sticky" elevation={0} className="border-b border-slate-200 bg-white/95 backdrop-blur-md" >
       <Toolbar className="flex min-h-[72px] justify-between px-4 sm:px-6">
         <Typography
           variant="h6"
@@ -127,24 +123,16 @@ function Header({ role, userName, isSidebarCollapsed = false }: HeaderProps) {
             className="group flex items-center gap-2.5 rounded-2xl px-3 py-1.5 transition-all duration-200 hover:bg-slate-100"
           >
             <Box className="relative">
-              <Avatar
-                className={`h-10 w-10 bg-gradient-to-tr ${roleConfig.gradient} text-white shadow-md transition-transform duration-200 group-hover:scale-105 ring-2 ${roleConfig.ringColor}`}
-              >
+              <Avatar className={`h-10 w-10 bg-gradient-to-tr ${roleConfig.gradient} text-white shadow-md transition-transform duration-200 group-hover:scale-105 ring-2 ${roleConfig.ringColor}`} >
                 <RoleIcon className="text-white" fontSize="small" />
               </Avatar>
             </Box>
 
             <Box className="flex flex-col items-start text-left">
-              <Typography
-                variant="body2"
-                className="!max-w-[140px] !truncate !text-xs !font-bold !text-slate-800 group-hover:!text-blue-700"
-              >
+              <Typography variant="body2" className="!max-w-[140px] !truncate !text-xs !font-bold !text-slate-800 group-hover:!text-blue-700" >
                 {activeName}
               </Typography>
-              <Typography
-                variant="caption"
-                className="!text-[10px] !font-semibold !text-slate-500 uppercase tracking-wider"
-              >
+              <Typography variant="caption" className="!text-[10px] !font-semibold !text-slate-500 uppercase tracking-wider" >
                 {roleConfig.label}
               </Typography>
             </Box>
@@ -170,9 +158,7 @@ function Header({ role, userName, isSidebarCollapsed = false }: HeaderProps) {
             }}
           >
             <Box className="flex flex-col items-center px-4 py-4 text-center">
-              <Avatar
-                className={`h-12 w-12 bg-gradient-to-tr ${roleConfig.gradient} text-white shadow-md ring-2 ${roleConfig.ringColor}`}
-              >
+              <Avatar className={`h-12 w-12 bg-gradient-to-tr ${roleConfig.gradient} text-white shadow-md ring-2 ${roleConfig.ringColor}`} >
                 <RoleIcon fontSize="medium" />
               </Avatar>
 
