@@ -59,37 +59,18 @@ function Sidebar({ role, isCollapsed = false }: SidebarProps) {
           transition: 'padding 200ms ease',
         }}
       >
-        <Box
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
-          sx={{
-            backgroundColor: 'primary.main',
-          }}
-        >
-          <Apartment
-            className="text-white"
-            fontSize="small"
-          />
+        <Box className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg" sx={{ backgroundColor: 'primary.main', }} >
+          <Apartment className="text-white" fontSize="small" />
         </Box>
 
         {/* Hide brand name and role badge when sidebar is collapsed OR on mobile/small screens */}
-        <Box
-          className="overflow-hidden whitespace-nowrap"
-          sx={{
-            display: isCollapsed ? 'none' : { xs: 'none', md: 'block' },
-          }}
-        >
-          <Typography
-            variant="subtitle1"
-            className="font-bold leading-tight"
-          >
+        <Box className="overflow-hidden whitespace-nowrap" sx={{ display: isCollapsed ? 'none' : { xs: 'none', md: 'block' }, }} >
+          <Typography variant="subtitle1" className="font-bold leading-tight" >
             PropDealer
           </Typography>
 
           <Box className="flex items-center gap-1.5">
-            <Typography
-              variant="caption"
-              color="text.secondary"
-            >
+            <Typography variant="caption" color="text.secondary" >
               Portal
             </Typography>
             <Typography
@@ -114,18 +95,9 @@ function Sidebar({ role, isCollapsed = false }: SidebarProps) {
 
       <Divider />
 
-      <Box
-        className="flex-1 overflow-y-auto"
-        sx={{
-          px: isCollapsed ? 1 : { xs: 1, md: 1.5 },
-          py: 2,
-        }}
-      >
+      <Box className="flex-1 overflow-y-auto" sx={{ px: isCollapsed ? 1 : { xs: 1, md: 1.5 }, py: 2, }} >
         {filteredSections.map((section) => (
-          <Box
-            key={section.title}
-            className="mb-5"
-          >
+          <Box key={section.title} className="mb-5" >
             {/* Section title hidden when collapsed or on small screens */}
             <Typography
               variant="caption"
