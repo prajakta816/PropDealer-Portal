@@ -23,6 +23,7 @@ import {
   CurrencyRupee,
   EditOutlined,
   FilterList,
+  HandshakeOutlined,//we used this to show the deal price and to set the deal price
   HomeWorkOutlined,
   LocationOnOutlined,
   RestartAlt,
@@ -45,6 +46,7 @@ import {
 } from '../constants/properties'
 
 type ModalMode = 'create' | 'edit' | 'view' | null
+type DealModalMode = 'create' | 'history' | null
 
 type SortField = 'title' | 'address' | 'basePrice' | 'status'
 type SortDirection = 'asc' | 'desc'
@@ -66,10 +68,16 @@ function loadProperties(): Property[] {
 export function PropertyListPage() {
   const { user } = useAuth()
   const isAdmin = user?.role === ROLES.ADMIN
+  const isAgent = user?.role === ROLES.AGENT
 
   const [properties, setProperties] = useState<Property[]>(loadProperties)
   const [modalMode, setModalMode] = useState<ModalMode>(null)
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
+
+  //this is for dealing the property and setting the deal price
+  const [dealPrice, setDealPrice] = useState('')
+  const[dealModalMode, setDealModalMode] = useState<ModalMode>(null)
+  const[dealProperty, setDealProperty] = useState<Property | null>(null)
 
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState('')
@@ -176,10 +184,25 @@ export function PropertyListPage() {
     setModalMode('view')
   }
 
-  const closeModal = () => {
+   const closeModal = () => {
     setModalMode(null)
     setSelectedProperty(null)
     resetForm()
+  }
+
+  const openCreateDeal= (property:Property)=>{
+    setDealProperty(property)
+    setDealModalMode('create')
+  }
+
+  const openDealHistory= (property:Property)=>{
+    setDealProperty(property)
+    setDealModalMode('history')
+  }
+
+  const closeDealModal = () => {
+    setDealModalMode(null)
+    setDealProperty(null)
   }
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -432,6 +455,40 @@ export function PropertyListPage() {
                 </IconButton>
               </Tooltip>
             )}
+            
+            {isAgent &&(
+              <Tooltip title="Deal Property" arrow >
+                <IconButton
+                  size="small"
+                  onClick={() => openCreateDeal(property)}
+                  sx={{
+                    transition: 'all 0.2s',
+                    '&:hover': {
+                      backgroundColor: '#fef3c7',
+                      color: '#d97706',
+                    },
+                  }}
+                >
+                  <HandshakeOutlined fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+
+          <Tooltip title="Deal History" arrow>
+            <IconButton
+              size="small"
+              onClick={() => openDealHistory(property)}
+              sx={{
+                transition: 'all 0.2s',
+                '&:hover': {
+                  backgroundColor: '#fef3c7',
+                  color: '#d97706',
+                },
+              }}
+            >
+              <Add  fontSize="small" />
+            </IconButton>
+          </Tooltip>
           </Box>
         )
       },
