@@ -25,7 +25,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return null
   })
 
-  const [isLoading] = useState<boolean>(false)
 
   const login = async (email: string, password: string): Promise<{ success: boolean; message?: string }> => {
     initializeStorage()
@@ -72,8 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user,
-        isAuthenticated: Boolean(user),
-        isLoading,
+        isAuthenticated: Boolean(user),//its used to chekc whether the user is logged in or not. If user is not null, it means the user is authenticated, and the value will be true. If user is null, it means no user is logged in, and the value will be false.
         login,
         logout,
         hasRole,

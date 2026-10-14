@@ -1,25 +1,7 @@
-import { useState, type FormEvent } from 'react'
+import { useState } from 'react'
 import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom'
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  IconButton,
-  InputAdornment,
-  Snackbar,
-  TextField,
-  Typography,
-} from '@mui/material'
-import {
-  Apartment,
-  ArrowBack,
-  EmailOutlined,
-  KeyOutlined,
-  ShieldOutlined,
-  Visibility,
-  VisibilityOff,
-} from '@mui/icons-material'
+import { Alert, Box, Button, CircularProgress, IconButton, InputAdornment, Snackbar, TextField, Typography, } from '@mui/material'
+import { Apartment, ArrowBack, EmailOutlined, KeyOutlined, ShieldOutlined, Visibility, VisibilityOff, } from '@mui/icons-material'
 import { useAuth } from '../context'
 
 interface LocationState {

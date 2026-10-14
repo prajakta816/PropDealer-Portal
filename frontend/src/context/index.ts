@@ -10,3 +10,4 @@ export {
 } from './authConstants'
 export type { User, StoredUser } from './authConstants'
 export type { AuthContextType } from './authContextDef'
+//this file serves as a central export point for the authentication-related context, hooks, constants, and types. It allows other parts of the application to import these functionalities from a single location, improving code organization and maintainability.

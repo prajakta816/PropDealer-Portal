@@ -74,7 +74,7 @@ const ROLE_GRADIENTS: Record<UserRole, string> = {
   [ROLES.BUYER]: 'linear-gradient(135deg, #f59e0b, #d97706)',
 }
 
-type ModalMode = 'create' | 'edit' | 'view' | null
+type ModalMode = 'create' | 'edit' | 'view' | null//impossible to open more than one
 
 // Fields the user can sort by
 type SortField = 'name' | 'email' | 'role'
@@ -354,6 +354,63 @@ export function UserListPage() {
 
   const columns: GridColDef[] = [
     {
+      field: 'actions',
+      headerName: 'Actions',
+      width: 150,
+      sortable: false,
+      align: 'center',
+      headerAlign: 'center',
+      renderCell: (params: GridRenderCellParams) => {
+        const isAdminUser = params.row.role === ROLES.ADMIN
+        return (
+          <Box className="flex items-center gap-1">
+            <Tooltip title="View Details" arrow>
+              <IconButton
+                size="small"
+                onClick={() => openView(params.row as User)}
+                sx={{
+                  transition: 'all 0.2s',
+                  '&:hover': { backgroundColor: '#dbeafe', color: '#2563eb', transform: 'scale(1.15)' },
+                }}
+              >
+                <VisibilityOutlined fontSize="small" />
+              </IconButton>
+            </Tooltip>
+
+            {!isAdminUser && (
+              <>
+                <Tooltip title="Edit User" arrow>
+                  <IconButton
+                    size="small"
+                    onClick={() => openEdit(params.row as User)}
+                    sx={{
+                      transition: 'all 0.2s',
+                      '&:hover': { backgroundColor: '#d1fae5', color: '#059669', transform: 'scale(1.15)' },
+                    }}
+                  >
+                    <EditOutlined fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+
+                <Tooltip title="Delete User" arrow>
+                  <IconButton
+                    size="small"
+                    onClick={() => openDeleteConfirm(params.row as User)}
+                    sx={{
+                      transition: 'all 0.2s',
+                      '&:hover': { backgroundColor: '#fee2e2', color: '#dc2626', transform: 'scale(1.15)' },
+                    }}
+                  >
+                    <DeleteOutlined fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </>
+            )}
+          </Box>
+        )
+      },
+    },
+    {
       field: 'name',
       headerName: 'User',
       flex: 1,
@@ -411,64 +468,7 @@ export function UserListPage() {
           }}
         />
       ),
-    },
-    {
-      field: 'actions',
-      headerName: 'Actions',
-      width: 150,
-      sortable: false,
-      align: 'center',
-      headerAlign: 'center',
-      renderCell: (params: GridRenderCellParams) => {
-        const isAdminUser = params.row.role === ROLES.ADMIN
-        return (
-          <Box className="flex items-center gap-1">
-            <Tooltip title="View Details" arrow>
-              <IconButton
-                size="small"
-                onClick={() => openView(params.row as User)}
-                sx={{
-                  transition: 'all 0.2s',
-                  '&:hover': { backgroundColor: '#dbeafe', color: '#2563eb', transform: 'scale(1.15)' },
-                }}
-              >
-                <VisibilityOutlined fontSize="small" />
-              </IconButton>
-            </Tooltip>
-
-            {!isAdminUser && (
-              <>
-                <Tooltip title="Edit User" arrow>
-                  <IconButton
-                    size="small"
-                    onClick={() => openEdit(params.row as User)}
-                    sx={{
-                      transition: 'all 0.2s',
-                      '&:hover': { backgroundColor: '#d1fae5', color: '#059669', transform: 'scale(1.15)' },
-                    }}
-                  >
-                    <EditOutlined fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-
-                <Tooltip title="Delete User" arrow>
-                  <IconButton
-                    size="small"
-                    onClick={() => openDeleteConfirm(params.row as User)}
-                    sx={{
-                      transition: 'all 0.2s',
-                      '&:hover': { backgroundColor: '#fee2e2', color: '#dc2626', transform: 'scale(1.15)' },
-                    }}
-                  >
-                    <DeleteOutlined fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              </>
-            )}
-          </Box>
-        )
-      },
-    },
+    }
   ]
 
   return (
@@ -536,24 +536,24 @@ export function UserListPage() {
             </Box>
 
             <Button
-                onClick={openCreate}
-                variant="contained"
-                startIcon={<Add />}
-                sx={{
-                  background: '#fff',
-                  color: '#1d4ed8',
-                  fontWeight: 700,
-                  borderRadius: '12px',
-                  px: 3,
-                  py: 1.5,
-                  textTransform: 'none',
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
-                  transition: 'all 0.2s',
-                  '&:hover': { background: '#eff6ff', transform: 'translateY(-2px)', boxShadow: '0 12px 32px rgba(0,0,0,0.2)' },
-                }}
-              >
-                Add New User
-              </Button>
+              onClick={openCreate}
+              variant="contained"
+              startIcon={<Add />}
+              sx={{
+                background: '#fff',
+                color: '#1d4ed8',
+                fontWeight: 700,
+                borderRadius: '12px',
+                px: 3,
+                py: 1.5,
+                textTransform: 'none',
+                boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                transition: 'all 0.2s',
+                '&:hover': { background: '#eff6ff', transform: 'translateY(-2px)', boxShadow: '0 12px 32px rgba(0,0,0,0.2)' },
+              }}
+            >
+              Add New User
+            </Button>
           </Box>
         </Box>
 
