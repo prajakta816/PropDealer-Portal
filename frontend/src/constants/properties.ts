@@ -11,10 +11,8 @@ export interface Property {
 
 export const PROPERTIES_STORAGE_KEY = 'propdealer_properties'
 
-export const PROPERTY_STATUS_CONFIG: Record<
-  PropertyStatus,
-  { label: string; color: 'success' | 'warning' | 'default' }
-> = {
+export const PROPERTY_STATUS_CONFIG: Record< PropertyStatus, { label: string; color: 'success' | 'warning' | 'default' } >
+ = {
   available: {
     label: 'Available',
     color: 'success',
@@ -29,4 +27,3 @@ export const PROPERTY_STATUS_CONFIG: Record<
   },
 }
 
-//export const DEFAULT_PROPERTIES: Property[] = []
