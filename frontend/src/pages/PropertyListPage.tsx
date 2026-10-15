@@ -1,5 +1,5 @@
 
-import { useState, type FormEvent } from 'react'
+import { useState, useEffect, type FormEvent } from 'react'
 import {
   Alert,
   Box,
@@ -132,7 +132,8 @@ export function PropertyListPage() {
   const isAgent = user?.role === ROLES.AGENT
 
   // Property state
-  const [properties, setProperties] = useState<Property[]>(loadProperties)
+  const [properties, setProperties] = useState<Property[]>([])
+  const [isLoadingProperties, setIsLoadingProperties] = useState(true)
   const [modalMode, setModalMode] = useState<ModalMode>(null)
   const [selectedProperty, setSelectedProperty] =
     useState<Property | null>(null)
@@ -147,7 +148,8 @@ export function PropertyListPage() {
   const [basePriceError, setBasePriceError] = useState<string | null>(null)
 
   // Deal state
-  const [deals, setDeals] = useState<Deal[]>(loadDeals)
+  const [deals, setDeals] = useState<Deal[]>([])
+  const [isLoadingDeals, setIsLoadingDeals] = useState(true)
   const [dealModalMode, setDealModalMode] =
     useState<DealModalMode>(null)
   const [dealProperty, setDealProperty] = useState<Property | null>(null)
@@ -165,7 +167,34 @@ export function PropertyListPage() {
 
   // Buyer dialog and dropdown state
   const [buyerDialogOpen, setBuyerDialogOpen] = useState(false)
-  const [buyers, setBuyers] = useState<User[]>(loadBuyers)
+  const [buyers, setBuyers] = useState<User[]>([])
+  const [isLoadingBuyers, setIsLoadingBuyers] = useState(true)
+
+  useEffect(() => {
+    try {
+      setProperties(loadProperties())
+    } catch (err) {
+      console.error('Failed to load properties:', err)
+    } finally {
+      setIsLoadingProperties(false)
+    }
+
+    try {
+      setDeals(loadDeals())
+    } catch (err) {
+      console.error('Failed to load deals:', err)
+    } finally {
+      setIsLoadingDeals(false)
+    }
+
+    try {
+      setBuyers(loadBuyers())
+    } catch (err) {
+      console.error('Failed to load buyers:', err)
+    } finally {
+      setIsLoadingBuyers(false)
+    }
+  }, [])
 
   // Search, filtering and sorting
   const [searchQuery, setSearchQuery] = useState('')
@@ -592,59 +621,7 @@ export function PropertyListPage() {
 
 
   const columns: GridColDef[] = [
-    {
-      field: 'title',
-      headerName: 'Title',
-      flex: 1.2,
-      minWidth: 200,
-      renderCell: (params: GridRenderCellParams) => (
-        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-          {params.row.title}
-        </Typography>
-      ),
-    },
-    {
-      field: 'address',
-      headerName: 'Address',
-      flex: 1.5,
-      minWidth: 220,
-      renderCell: (params: GridRenderCellParams) => (
-        <Typography variant="body2" sx={{ color: '#475569' }}>
-          {params.row.address}
-        </Typography>
-      ),
-    },
-    {
-      field: 'basePrice',
-      headerName: 'Base Price',
-      width: 170,
-      renderCell: (params: GridRenderCellParams) => (
-        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-          {formatPrice(Number(params.row.basePrice))}
-        </Typography>
-      ),
-    },
-    {
-      field: 'status',
-      headerName: 'Status',
-      width: 180,
-      renderCell: (params: GridRenderCellParams) => {
-        const currentStatus = params.row.status as PropertyStatus
-        const config =
-          PROPERTY_STATUS_CONFIG[currentStatus] ??
-          PROPERTY_STATUS_CONFIG.available
-
-        return (
-          <Chip
-            label={config.label}
-            color={config.color}
-            size="small"
-            sx={{ fontWeight: 600 }}
-          />
-        )
-      },
-    },
-    {
+     {
       field: 'actions',
       headerName: 'Actions',
       width: 150,
@@ -699,6 +676,113 @@ export function PropertyListPage() {
         )
       },
     },
+    {
+      field: 'title',
+      headerName: 'Title',
+      flex: 1.2,
+      minWidth: 200,
+      renderCell: (params: GridRenderCellParams) => (
+        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+          {params.row.title}
+        </Typography>
+      ),
+    },
+    {
+      field: 'address',
+      headerName: 'Address',
+      flex: 1.5,
+      minWidth: 220,
+      renderCell: (params: GridRenderCellParams) => (
+        <Typography variant="body2" sx={{ color: '#475569' }}>
+          {params.row.address}
+        </Typography>
+      ),
+    },
+    {
+      field: 'basePrice',
+      headerName: 'Base Price',
+      width: 170,
+      renderCell: (params: GridRenderCellParams) => (
+        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+          {formatPrice(Number(params.row.basePrice))}
+        </Typography>
+      ),
+    },
+    {
+      field: 'status',
+      headerName: 'Status',
+      width: 180,
+      renderCell: (params: GridRenderCellParams) => {
+        const currentStatus = params.row.status as PropertyStatus
+        const config =
+          PROPERTY_STATUS_CONFIG[currentStatus] ??
+          PROPERTY_STATUS_CONFIG.available
+
+        return (
+          <Chip
+            label={config.label}
+            color={config.color}
+            size="small"
+            sx={{ fontWeight: 600 }}
+          />
+        )
+      },
+    }
+    // {
+    //   field: 'actions',
+    //   headerName: 'Actions',
+    //   width: 150,
+    //   sortable: false,
+    //   align: 'center',
+    //   headerAlign: 'center',
+    //   renderCell: (params: GridRenderCellParams) => {
+    //     const property = params.row as Property
+
+    //     return (
+    //       <Box className="flex items-center gap-1">
+    //         <Tooltip title="View Property" arrow>
+    //           <IconButton
+    //             size="small"
+    //             onClick={() => openView(property)}
+    //           >
+    //             <VisibilityOutlined fontSize="small" />
+    //           </IconButton>
+    //         </Tooltip>
+
+    //         {isAdmin && (
+    //           <Tooltip title="Edit Property" arrow>
+    //             <IconButton
+    //               size="small"
+    //               onClick={() => openEdit(property)}
+    //             >
+    //               <EditOutlined fontSize="small" />
+    //             </IconButton>
+    //           </Tooltip>
+    //         )}
+
+    //         {isAgent && (
+    //           <Tooltip title="Create Deal" arrow>
+    //             <IconButton
+    //               size="small"
+    //               onClick={() => openCreateDeal(property)}
+    //             >
+    //               <HandshakeOutlined fontSize="small" />
+    //             </IconButton>
+    //           </Tooltip>
+    //         )}
+
+    //         <Tooltip title="Deal History" arrow>
+    //           <IconButton
+    //             size="small"
+    //             onClick={() => openDealHistory(property)}
+    //           >
+    //             <FilterList fontSize="small" />
+    //           </IconButton>
+    //         </Tooltip>
+    //       </Box>
+    //     )
+    //   },
+    // },
   ]
 
   return (
@@ -894,6 +978,7 @@ export function PropertyListPage() {
           <DataGrid
             rows={sortedProperties}
             columns={columns}
+            loading={isLoadingProperties}
             getRowId={(row) => row.id}
             pageSizeOptions={[5, 10, 25]}
             initialState={{
@@ -1031,8 +1116,8 @@ export function PropertyListPage() {
                       <CurrencyRupee fontSize="small" />
                     </InputAdornment>
                   ),
-                  htmlInput: { min: 1, step: 1 },
                 },
+                htmlInput: { min: 1, step: 1 },
               }}
             />
 
@@ -1232,24 +1317,32 @@ export function PropertyListPage() {
                       labelId="deal-buyer-label"
                       label="Select Buyer"
                       value={selectedBuyerId}
-                      disabled={isSavingDeal || Boolean(lockedBuyerDeal)}
+                      disabled={isSavingDeal || Boolean(lockedBuyerDeal) || isLoadingBuyers}
                       onChange={(event) => {
                         setSelectedBuyerId(String(event.target.value))
                         setBuyerError(null)
                       }}
                     >
-                      {buyers.map((buyer) => (
-                        <MenuItem key={buyer.id} value={buyer.id}>
-                          <Box>
-                            <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.3 }}>
-                              {buyer.name}
-                            </Typography>
-                            <Typography variant="caption" sx={{ color: '#64748b', lineHeight: 1.2 }}>
-                              {buyer.email}
-                            </Typography>
-                          </Box>
+                      {isLoadingBuyers ? (
+                        <MenuItem disabled value="">
+                          <Typography variant="body2" sx={{ color: '#64748b' }}>
+                            Loading buyers...
+                          </Typography>
                         </MenuItem>
-                      ))}
+                      ) : (
+                        buyers.map((buyer) => (
+                          <MenuItem key={buyer.id} value={buyer.id}>
+                            <Box>
+                              <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.3 }}>
+                                {buyer.name}
+                              </Typography>
+                              <Typography variant="caption" sx={{ color: '#64748b', lineHeight: 1.2 }}>
+                                {buyer.email}
+                              </Typography>
+                            </Box>
+                          </MenuItem>
+                        ))
+                      )}
                     </Select>
 
                     {buyerError && (
@@ -1328,7 +1421,11 @@ export function PropertyListPage() {
                   <strong>Property ID:</strong> {dealProperty.id}
                 </Typography>
 
-                {propertyDeals.length === 0 ? (
+                {isLoadingDeals ? (
+                  <Box className="flex justify-center py-4">
+                    <CircularProgress size={28} />
+                  </Box>
+                ) : propertyDeals.length === 0 ? (
                   <Alert severity="info">
                     No deals have been recorded for this property yet.
                   </Alert>
