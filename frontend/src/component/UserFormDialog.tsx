@@ -27,11 +27,8 @@ interface UserFormDialogProps {
   onUserCreated: (user: User) => void
 }
 
-export default function UserFormDialog({
-  open,
-  onClose,
-  onUserCreated,
-}: UserFormDialogProps) {
+export default function UserFormDialog({ open, onClose, onUserCreated, }: UserFormDialogProps)
+ {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   // const [password, setPassword] = useState('')
@@ -233,31 +230,6 @@ export default function UserFormDialog({
             fullWidth
             disabled={isSubmitting}
           />
-
-          {/* 
-          <TextField
-            label="Password"
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            autoComplete="new-password"
-            required
-            fullWidth
-            disabled={isSubmitting}
-            helperText="Must contain at least 6 characters."
-          />
-          <TextField
-            label="Confirm Password"
-            type="password"
-            value={confirmPassword}
-            onChange={(event) => setConfirmPassword(event.target.value)}
-            autoComplete="new-password"
-            required
-            fullWidth
-            disabled={isSubmitting}
-          />
-          */}
-
 
         </Box>
       </DialogContent>

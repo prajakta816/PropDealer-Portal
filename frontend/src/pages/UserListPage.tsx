@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useState, useEffect, type FormEvent } from 'react'
 import {
   Alert,
   Avatar,
@@ -83,7 +83,18 @@ type SortField = 'name' | 'email' | 'role'
 type SortDirection = 'asc' | 'desc'
 
 export function UserListPage() {
-  const [users, setUsers] = useState<User[]>(loadUsers)
+  const [users, setUsers] = useState<User[]>([])
+  const [isLoadingUsers, setIsLoadingUsers] = useState(true)
+
+  useEffect(() => {
+    try {
+      setUsers(loadUsers())
+    } catch (err) {
+      console.error('Failed to load users:', err)
+    } finally {
+      setIsLoadingUsers(false)
+    }
+  }, [])
   const [modalMode, setModalMode] = useState<ModalMode>(null)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
@@ -227,13 +238,11 @@ export function UserListPage() {
 
     let hasError = false
 
-    // 1. Full name validation
     if (!name.trim()) {
       setNameError('Full name is required.')
       hasError = true
     }
 
-    // 2. Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!email.trim()) {
       setEmailError('Email address is required.')
@@ -243,7 +252,6 @@ export function UserListPage() {
       hasError = true
     }
 
-    // 3. Password validation for Create mode
     if (modalMode === 'create') {
       if (!password) {
         setPasswordError('Password is required.')
@@ -262,7 +270,6 @@ export function UserListPage() {
       }
     }
 
-    // 4. Password validation for Edit mode (optional)
     if (modalMode === 'edit' && password) {
       if (password.length < 6) {
         setPasswordError('New password must be at least 6 characters.')
@@ -752,6 +759,7 @@ export function UserListPage() {
             <DataGrid
               rows={sortedUsers}
               columns={columns}
+              loading={isLoadingUsers}
               getRowId={(row) => row.id}
               pageSizeOptions={[5, 10, 25]}
               initialState={{
