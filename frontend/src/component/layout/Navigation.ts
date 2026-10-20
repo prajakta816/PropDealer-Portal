@@ -1,13 +1,4 @@
-import {
-  Assessment,
-  Business,
-  Dashboard,
-  Group,
-  ManageAccounts,
-  ReceiptLong,
-  Settings,
-  Tune,
-} from '@mui/icons-material'
+import { Assessment, Business, Dashboard, Group, ManageAccounts, ReceiptLong, Settings, Tune, } from '@mui/icons-material'
 import type { SvgIconComponent } from '@mui/icons-material'
 
 import { ROLES, type UserRole } from '../../constants/roles'

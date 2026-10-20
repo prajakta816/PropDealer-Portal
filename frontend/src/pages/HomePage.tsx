@@ -31,10 +31,7 @@ function HomePage() {
   return (
     <Box className="overflow-hidden bg-white text-slate-900">
       <Box className="relative bg-gradient-to-br from-slate-950 via-blue-950 to-blue-800 text-white">
-        <Box
-          aria-hidden="true"
-          className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-blue-400/20 blur-3xl"
-        />
+        <Box aria-hidden="true" className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-blue-400/20 blur-3xl" />
 
         <Container maxWidth="xl" className="relative">
           <Box className="grid min-h-[560px] items-center gap-12 py-20 md:grid-cols-2 md:py-28">
@@ -43,10 +40,7 @@ function HomePage() {
                 One workspace. Better property operations.
               </Box>
 
-              <Typography
-                component="h1"
-                className="!text-4xl !font-extrabold !leading-tight tracking-tight sm:!text-5xl lg:!text-6xl"
-              >
+                <Typography component="h1" className="!text-4xl !font-extrabold !leading-tight tracking-tight sm:!text-5xl lg:!text-6xl" >
                 Every property.
                 <br />
                 Every person.
@@ -133,25 +127,6 @@ function HomePage() {
                     </Typography>
                   </Box>
                 </Box>
-
-                <Box className="space-y-3">
-                  {['Admin workspace', 'Agent workspace', 'Commission workspace'].map(
-                    (item, index) => (
-                      <Box
-                        key={item}
-                        className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/5 p-3"
-                      >
-                        <Box className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-400/15 text-sm font-bold text-blue-200">
-                          {index + 1}
-                        </Box>
-                        <Typography className="!font-medium !text-slate-100">
-                          {item}
-                        </Typography>
-                        <Box className="ml-auto h-2 w-2 rounded-full bg-emerald-400" />
-                      </Box>
-                    ),
-                  )}
-                </Box>
               </Box>
             </Box>
           </Box>
@@ -161,10 +136,7 @@ function HomePage() {
       <Box id="features" className="py-20 sm:py-24">
         <Container maxWidth="xl">
           <Box className="mx-auto mb-14 max-w-2xl text-center">
-            <Typography
-              component="p"
-              className="!text-sm !font-bold !uppercase !tracking-[0.2em] !text-blue-700"
-            >
+            <Typography component="p" className="!text-sm !font-bold !uppercase !tracking-[0.2em] !text-blue-700" >
               One connected platform
             </Typography>
 
@@ -211,10 +183,7 @@ function HomePage() {
         <Container maxWidth="xl">
           <Box className="flex flex-col items-start justify-between gap-6 rounded-3xl bg-blue-950 p-8 text-white sm:p-12 md:flex-row md:items-center">
             <Box className="max-w-2xl">
-              <Typography
-                component="h2"
-                className="!text-2xl !font-bold sm:!text-3xl"
-              >
+              <Typography component="h2" className="!text-2xl !font-bold sm:!text-3xl" >
                 Bring your property team together.
               </Typography>
               <Typography className="!mt-3 !leading-7 !text-blue-100">

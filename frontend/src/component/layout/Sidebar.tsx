@@ -1,17 +1,6 @@
 import { useMemo } from 'react'
 import { Link as RouterLink, useLocation } from 'react-router-dom'
-import {
-  Box,
-  Divider,
-  Drawer,
-  List,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  Toolbar,
-  Tooltip,
-  Typography,
-} from '@mui/material'
+import { Box, Divider, Drawer, List, ListItemButton, ListItemIcon, ListItemText, Toolbar, Tooltip, Typography, } from '@mui/material'
 import { Apartment } from '@mui/icons-material'
 import { navigationSections } from './Navigation'
 import type { UserRole } from '../../constants/roles'
@@ -28,8 +17,7 @@ const COLLAPSED_WIDTH = 64
 function Sidebar({ role, isCollapsed = false }: SidebarProps) {
   const location = useLocation()
 
-  // On screens below 900px (md), sidebar shrinks to icon-only (64px) automatically.
-  // On screens 900px and above, it respects isCollapsed (240px expanded, 64px collapsed).
+ 
   const responsiveWidth = {
     xs: COLLAPSED_WIDTH,
     md: isCollapsed ? COLLAPSED_WIDTH : EXPANDED_WIDTH,
@@ -170,7 +158,6 @@ function Sidebar({ role, isCollapsed = false }: SidebarProps) {
                   </ListItemButton>
                 )
 
-                // Tooltip shows menu label on hover when collapsed or on small screens
                 return (
                   <Tooltip
                     key={item.path}

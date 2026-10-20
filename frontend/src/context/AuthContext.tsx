@@ -1,17 +1,10 @@
 import { useState, type ReactNode } from 'react'
 import type { UserRole } from '../constants/roles'
-import {
-  USERS_STORAGE_KEY,
-  SESSION_STORAGE_KEY,
-  DEFAULT_ADMIN,
-  type User,
-  type StoredUser,
-  hashPassword,
-  initializeStorage,
-} from './authConstants'
+import { USERS_STORAGE_KEY, SESSION_STORAGE_KEY, DEFAULT_ADMIN, type User, type StoredUser, hashPassword, initializeStorage, } from './authConstants'
 import { AuthContext } from './authContextDef'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+
   const [user, setUser] = useState<User | null>(() => {
     initializeStorage()
     const storedSession = localStorage.getItem(SESSION_STORAGE_KEY)
@@ -24,7 +17,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     return null
   })
-
 
   const login = async (email: string, password: string): Promise<{ success: boolean; message?: string }> => {
     initializeStorage()
