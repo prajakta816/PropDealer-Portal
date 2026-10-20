@@ -1,18 +1,5 @@
-import {
-  Box,
-  Button,
-  Card,
-  CardContent,
-  Container,
-  Typography,
-} from '@mui/material'
-import {
-  Apartment,
-  ArrowForward,
-  Assessment,
-  Group,
-  ReceiptLong,
-} from '@mui/icons-material'
+import { Box, Button, Card, CardContent, Container, Typography, } from '@mui/material'
+import { Apartment, ArrowForward, Assessment, Group, ReceiptLong, } from '@mui/icons-material'
 import { Link as RouterLink } from 'react-router-dom'
 import { useAuth } from '../context'
 import { ROLES, type UserRole } from '../constants/roles'

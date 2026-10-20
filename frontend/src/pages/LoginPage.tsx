@@ -1,7 +1,7 @@
-import { useState } from 'react'
+import { useState , type FormEvent } from 'react'
 import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom'
 import { Alert, Box, Button, CircularProgress, IconButton, InputAdornment, Snackbar, TextField, Typography, } from '@mui/material'
-import { Apartment, ArrowBack, EmailOutlined, KeyOutlined, ShieldOutlined, Visibility, VisibilityOff, } from '@mui/icons-material'
+import { Apartment, ArrowBack, EmailOutlined, KeyOutlined, Visibility, VisibilityOff, } from '@mui/icons-material'
 import { useAuth } from '../context'
 
 interface LocationState {
@@ -85,7 +85,7 @@ export function LoginPage() {
       const result = await login(email, password)
       if (result.success) {
         setSuccessToast(true)
-        await new Promise((resolve) => setTimeout(resolve, 800))
+        await new Promise((resolve) => setTimeout(resolve, 800))//wait for the toast to be visible for few second
         const state = location.state as LocationState | null
         const destination = state?.from?.pathname || '/dashboard'
         navigate(destination, { replace: true })
@@ -95,7 +95,7 @@ export function LoginPage() {
     } catch {
       setErrorMessage('An unexpected error occurred while connecting. Please try again.')
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false)//why we written inside the finaly block is because if the login fails or succeeds we want to set the isSubmitting to false so that the user can try again or continue using the app
     }
   }
 
@@ -103,14 +103,8 @@ export function LoginPage() {
     <>
       <Box className="flex min-h-[calc(100vh-69px)] w-full flex-col bg-slate-50 md:flex-row">
         <Box className="relative hidden w-full flex-col justify-between overflow-hidden bg-gradient-to-br from-slate-950 via-blue-950 to-blue-900 p-12 text-white md:flex md:w-5/12 lg:w-1/2">
-          <Box
-            aria-hidden="true"
-            className="pointer-events-none absolute -right-20 -top-20 h-96 w-96 rounded-full bg-blue-500/20 blur-3xl"
-          />
-          <Box
-            aria-hidden="true"
-            className="pointer-events-none absolute -bottom-20 -left-20 h-96 w-96 rounded-full bg-indigo-500/10 blur-3xl"
-          />
+          <Box aria-hidden="true" className="pointer-events-none absolute -right-20 -top-20 h-96 w-96 rounded-full bg-blue-500/20 blur-3xl" />
+          <Box aria-hidden="true" className="pointer-events-none absolute -bottom-20 -left-20 h-96 w-96 rounded-full bg-indigo-500/10 blur-3xl" />
 
           <Box className="relative z-10 flex items-center gap-3">
             <Box className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-500/30">
@@ -122,13 +116,7 @@ export function LoginPage() {
           </Box>
 
           <Box className="relative z-10 max-w-lg space-y-6">
-            <Box className="inline-flex items-center gap-2 rounded-full border border-blue-400/30 bg-blue-500/10 px-3.5 py-1.5 text-xs font-semibold text-blue-200 backdrop-blur-md">
-              <ShieldOutlined fontSize="small" /> Secure Role-Based Access
-            </Box>
-            <Typography
-              variant="h3"
-              className="!text-3xl !font-bold !leading-tight tracking-tight lg:!text-4xl"
-            >
+            <Typography variant="h3" className="!text-3xl !font-bold !leading-tight tracking-tight lg:!text-4xl" >
               Welcome back to your workspace.
             </Typography>
             <Typography className="!text-base !leading-relaxed !text-slate-300">
@@ -167,11 +155,7 @@ export function LoginPage() {
             </Box>
 
             <Box>
-              <Typography
-                variant="h4"
-                component="h1"
-                className="!text-2xl !font-bold tracking-tight text-slate-900 sm:!text-3xl"
-              >
+              <Typography variant="h4" component="h1" className="!text-2xl !font-bold tracking-tight text-slate-900 sm:!text-3xl" >
                 Sign in to PropDealer
               </Typography>
               <Typography variant="body2" className="!mt-2 !text-slate-500">

@@ -17,8 +17,6 @@ function AppLayout({ role, userName }: AppLayoutProps) {
   const activeRole = role || user?.role || ROLES.AGENT
   const activeName = userName || user?.name || 'User'
 
-  // State to track whether the sidebar is collapsed or expanded
-  // false = expanded (240px), true = collapsed (64px)
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false)
 
   // Function to toggle sidebar state on double clicking the main content area
@@ -28,9 +26,7 @@ function AppLayout({ role, userName }: AppLayoutProps) {
 
   return (
     <Box className="flex min-h-screen bg-slate-50">
-      {/*Sidebar Collapse Feature */}
       <Sidebar role={activeRole} isCollapsed={isCollapsed} />
-      {/*Sidebar Collapse Feature */}
       <Box
         className="flex min-w-0 flex-1 flex-col"
         onDoubleClick={handleDoubleClick}
