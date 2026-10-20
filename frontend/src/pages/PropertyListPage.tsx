@@ -1,61 +1,15 @@
 
-import { useState, type FormEvent } from 'react'
-import {
-  Alert,
-  Box,
-  Button,
-  Chip,
-  Container,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  FormControl,
-  IconButton,
-  InputAdornment,
-  InputLabel,
-  MenuItem,
-  Select,
-  Snackbar,
-  TextField,
-  Tooltip,
-  Typography,
-  CircularProgress,
-} from '@mui/material'
-import {
-  Add,
-  ArrowBack,
-  Close,
-  CurrencyRupee,
-  EditOutlined,
-  FilterList,
-  HandshakeOutlined,
-  HomeWorkOutlined,
-  LocationOnOutlined,
-  RestartAlt,
-  Search,
-  VisibilityOutlined,
-} from '@mui/icons-material'
-import {
-  DataGrid,
-  type GridColDef,
-  type GridRenderCellParams,
-} from '@mui/x-data-grid'
+import { useState, useEffect, type FormEvent } from 'react'
+import { Alert, Box, Button, Chip, Container, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, IconButton, InputAdornment, InputLabel, MenuItem, Select, Snackbar, TextField, Tooltip, Typography, CircularProgress, } from '@mui/material'
+import { Add, ArrowBack, Close, CurrencyRupee, EditOutlined, FilterList, HandshakeOutlined, HomeWorkOutlined, LocationOnOutlined, RestartAlt, Search, VisibilityOutlined, } from '@mui/icons-material'
+import { DataGrid, type GridColDef, type GridRenderCellParams, } from '@mui/x-data-grid'
 import { Link as RouterLink } from 'react-router-dom'
 
 import UserFormDialog from '../component/UserFormDialog'
 import { useAuth } from '../context'
-import {
-  USERS_STORAGE_KEY,
-  type User,
-} from '../context/authConstants'
+import { USERS_STORAGE_KEY, type User, } from '../context/authConstants'
 import { ROLES } from '../constants/roles'
-import {
-  PROPERTIES_STORAGE_KEY,
-  PROPERTY_STATUS_CONFIG,
-  type Property,
-  type PropertyStatus,
-} from '../constants/properties'
+import { PROPERTIES_STORAGE_KEY, PROPERTY_STATUS_CONFIG, type Property, type PropertyStatus, } from '../constants/properties'
 
 type ModalMode = 'create' | 'edit' | 'view' | null
 type DealModalMode = 'create' | 'history' | null
@@ -123,7 +77,7 @@ function loadDeals(): Deal[] {
 }
 
 function formatPrice(price: number): string {
-  return `₹${price.toLocaleString('en-IN')}`
+  return `${price.toLocaleString('en-IN')}`
 }
 
 export function PropertyListPage() {
@@ -132,7 +86,8 @@ export function PropertyListPage() {
   const isAgent = user?.role === ROLES.AGENT
 
   // Property state
-  const [properties, setProperties] = useState<Property[]>(loadProperties)
+  const [properties, setProperties] = useState<Property[]>([])
+  const [isLoadingProperties, setIsLoadingProperties] = useState(true)
   const [modalMode, setModalMode] = useState<ModalMode>(null)
   const [selectedProperty, setSelectedProperty] =
     useState<Property | null>(null)
@@ -147,7 +102,8 @@ export function PropertyListPage() {
   const [basePriceError, setBasePriceError] = useState<string | null>(null)
 
   // Deal state
-  const [deals, setDeals] = useState<Deal[]>(loadDeals)
+  const [deals, setDeals] = useState<Deal[]>([])
+  const [isLoadingDeals, setIsLoadingDeals] = useState(true)
   const [dealModalMode, setDealModalMode] =
     useState<DealModalMode>(null)
   const [dealProperty, setDealProperty] = useState<Property | null>(null)
@@ -162,10 +118,38 @@ export function PropertyListPage() {
   // Tracks whether the deal form was opened from the History view.
   // If true, Cancel goes back to History instead of closing the dialog.
   const [openedFromHistory, setOpenedFromHistory] = useState(false)
+  const [confirmLostOpen, setConfirmLostOpen] = useState(false)
 
   // Buyer dialog and dropdown state
   const [buyerDialogOpen, setBuyerDialogOpen] = useState(false)
-  const [buyers, setBuyers] = useState<User[]>(loadBuyers)
+  const [buyers, setBuyers] = useState<User[]>([])
+  const [isLoadingBuyers, setIsLoadingBuyers] = useState(true)
+
+  useEffect(() => {
+    try {
+      setProperties(loadProperties())
+    } catch (err) {
+      console.error('Failed to load properties:', err)
+    } finally {
+      setIsLoadingProperties(false)
+    }
+
+    try {
+      setDeals(loadDeals())
+    } catch (err) {
+      console.error('Failed to load deals:', err)
+    } finally {
+      setIsLoadingDeals(false)
+    }
+
+    try {
+      setBuyers(loadBuyers())
+    } catch (err) {
+      console.error('Failed to load buyers:', err)
+    } finally {
+      setIsLoadingBuyers(false)
+    }
+  }, [])
 
   // Search, filtering and sorting
   const [searchQuery, setSearchQuery] = useState('')
@@ -176,10 +160,7 @@ export function PropertyListPage() {
   const [toastMessage, setToastMessage] = useState<string | null>(null)
 
   const persistProperties = (updated: Property[]) => {
-    localStorage.setItem(
-      PROPERTIES_STORAGE_KEY,
-      JSON.stringify(updated),
-    )
+    localStorage.setItem( PROPERTIES_STORAGE_KEY, JSON.stringify(updated) )
     setProperties(updated)
   }
 
@@ -233,9 +214,7 @@ export function PropertyListPage() {
     resetPropertyForm()
   }
 
-  const handlePropertySubmit = (
-    event: FormEvent<HTMLFormElement>,
-  ) => {
+  const handlePropertySubmit = ( event: FormEvent<HTMLFormElement>, ) => {
     event.preventDefault()
     clearErrors()
 
@@ -259,9 +238,8 @@ export function PropertyListPage() {
       setBasePriceError('Enter a valid positive base price.')
       hasError = true
     }
-
-    if (hasError) return
-
+    if (hasError) {return
+    }
     const existing = loadProperties()
     const normalizedTitle = title.trim().toLowerCase()
     const normalizedAddress = address.trim().toLowerCase()
@@ -390,7 +368,7 @@ export function PropertyListPage() {
 
     setBuyers(loadBuyers())
     setDealProperty(property)
-    setDealPrice(String(deal.dealPrice))
+    setDealPrice(deal.status === 'Lost' ? '' : String(deal.dealPrice))
     setSelectedBuyerId(deal.buyerId)
     setDealStatus(deal.status)
     setEditingDealId(deal.id)
@@ -407,14 +385,117 @@ export function PropertyListPage() {
       (buyer) => buyer.id === newBuyer.id,
     )
 
-    setBuyers(
-      alreadyIncluded
-        ? refreshedBuyers
-        : [...refreshedBuyers, newBuyer],
-    )
+    setBuyers( alreadyIncluded ? refreshedBuyers : [...refreshedBuyers, newBuyer], )
     setSelectedBuyerId(newBuyer.id)
     setBuyerError(null)
     setBuyerDialogOpen(false)
+  }
+
+  const performSaveDeal = (statusToSave: DealStatus = dealStatus) => {
+    if (!dealProperty) return
+
+    const buyer = buyers.find((item) => item.id === selectedBuyerId)
+    if (!buyer) return
+
+    const previousDeal = deals.find((deal) => deal.id === editingDealId)
+    const now = new Date().toISOString()
+    const finalPrice = statusToSave === 'Lost' ? 0 : Number(dealPrice)
+
+    const deal: Deal = {
+      id: previousDeal?.id ?? `deal_${Date.now()}`,
+      propertyId: dealProperty.id,
+      propertyTitle: dealProperty.title,
+      buyerId: buyer.id,
+      buyerName: buyer.name,
+      buyerEmail: buyer.email,
+      basePrice: dealProperty.basePrice,
+      dealPrice: finalPrice,
+      status: statusToSave,
+      createdAt: previousDeal?.createdAt ?? now,
+      updatedAt: now,
+    }
+
+    let updatedDeals = previousDeal
+      ? deals.map((item) => (item.id === previousDeal.id ? deal : item))
+      : [deal, ...deals]
+
+    if (statusToSave === 'Closed') {
+      updatedDeals = updatedDeals.map((item) =>
+        item.propertyId === dealProperty.id &&
+        item.id !== deal.id &&
+        item.status === 'Negotiation'
+          ? { ...item, status: 'Lost' as DealStatus, updatedAt: now }
+          : item,
+      )
+    }
+
+    persistDeals(updatedDeals)
+
+    const dealsForProperty = updatedDeals.filter(
+      (item) => item.propertyId === dealProperty.id,
+    )
+
+    let nextPropertyStatus: PropertyStatus = 'available'
+    if (dealsForProperty.some((item) => item.status === 'Closed')) {
+      nextPropertyStatus = 'sold'
+    } else if (
+      dealsForProperty.some((item) => item.status === 'Negotiation')
+    ) {
+      nextPropertyStatus = 'under_negotiation'
+    }
+
+    const latestProperties = loadProperties()
+    const updatedProperties = latestProperties.map((property) =>
+      property.id === dealProperty.id
+        ? {
+            ...property,
+            status: nextPropertyStatus,
+          }
+        : property,
+    )
+
+    persistProperties(updatedProperties)
+    setDealProperty((prev) =>
+      prev && prev.id === dealProperty.id
+        ? { ...prev, status: nextPropertyStatus }
+        : prev,
+    )
+
+    setToastMessage(
+      previousDeal
+        ? statusToSave === 'Lost'
+          ? 'Deal marked as Lost.'
+          : statusToSave === 'Closed'
+            ? 'Deal closed successfully.'
+            : 'Deal updated successfully.'
+        : 'Deal created successfully.',
+    )
+
+    if (openedFromHistory) {
+      setOpenedFromHistory(false)
+      setDealPrice('')
+      setSelectedBuyerId('')
+      setDealStatus('Negotiation')
+      setEditingDealId(null)
+      setDealPriceError(null)
+      setBuyerError(null)
+      setDealModalMode('history')
+    } else {
+      closeDealModal()
+    }
+  }
+
+  const handleConfirmLost = () => {
+    setConfirmLostOpen(false)
+    setIsSavingDeal(true)
+    try {
+      performSaveDeal('Lost')
+    } catch (error) {
+      console.error('Unable to save deal:', error)
+      setToastMessage('Unable to save the deal. Please try again.')
+    } finally {
+      setIsSavingDeal(false)
+    }
   }
 
   const handleCreateDealForm = async (
@@ -422,113 +503,86 @@ export function PropertyListPage() {
   ) => {
     event.preventDefault()
 
-    if (isSavingDeal || !dealProperty) return
+    if (isSavingDeal || !dealProperty || isDealReadOnly) return
 
     setDealPriceError(null)
     setBuyerError(null)
 
     const parsedDealPrice = Number(dealPrice)
-    const buyer = buyers.find(
-      (item) => item.id === selectedBuyerId,
-    )
+    const buyer = buyers.find((item) => item.id === selectedBuyerId)
 
     let hasError = false
-
-    if (!dealPrice.trim()) {
-      setDealPriceError('Deal price is required.')
-      hasError = true
-    } else if (
-      !Number.isFinite(parsedDealPrice) ||
-      parsedDealPrice <= 0
-    ) {
-      setDealPriceError('Enter a valid positive deal price.')
-      hasError = true
-    }
 
     if (!buyer) {
       setBuyerError('Please select a valid Buyer.')
       hasError = true
     }
 
+    if (dealStatus === 'Closed') {
+      if (!dealPrice.trim()) {
+        setDealPriceError('Selling price is required.')
+        hasError = true
+      } else if (!Number.isFinite(parsedDealPrice) || parsedDealPrice <= 0) {
+        setDealPriceError('Enter a valid positive selling price.')
+        hasError = true
+      } else if (parsedDealPrice <= dealProperty.basePrice) {
+        setDealPriceError(
+          `Selling price must be greater than base price (${formatPrice(dealProperty.basePrice)}).`,
+        )
+        hasError = true
+      }
+    } else if (dealStatus === 'Negotiation') {
+      if (!dealPrice.trim()) {
+        setDealPriceError('Deal price is required.')
+        hasError = true
+      } else if (!Number.isFinite(parsedDealPrice) || parsedDealPrice <= 0) {
+        setDealPriceError('Enter a valid positive deal price.')
+        hasError = true
+      }
+    }
+
     if (hasError || !buyer) return
 
-    const previousDeal = deals.find(
-      (deal) => deal.id === editingDealId,
+    const previousDeal = deals.find((deal) => deal.id === editingDealId)
+
+    if (!previousDeal && dealProperty.status === 'sold') {
+      setBuyerError('This property is already sold. No further deals can be added.')
+      return
+    }
+
+    const conflictingDeal = deals.find(
+      (deal) =>
+        deal.id !== editingDealId &&
+        deal.propertyId === dealProperty.id &&
+        deal.buyerId === buyer.id &&
+        deal.status !== 'Lost',
     )
+
+    if (conflictingDeal) {
+      setBuyerError(
+        'A deal for this property and buyer already exists and is not lost.',
+      )
+      return
+    }
 
     if (
       previousDeal &&
-      (previousDeal.status === 'Closed' ||
-        previousDeal.status === 'Lost') &&
+      (previousDeal.status === 'Closed' || previousDeal.status === 'Lost') &&
       previousDeal.buyerId !== buyer.id
     ) {
-      setBuyerError(
-        'The Buyer cannot be changed for a Closed or Lost deal.',
-      )
+      setBuyerError('The Buyer cannot be changed for a Closed or Lost deal.')
+      return
+    }
+
+    if (dealStatus === 'Lost') {
+      setConfirmLostOpen(true)
       return
     }
 
     setIsSavingDeal(true)
 
     try {
-      // Demo loading state. Replace with an API call when available.
-      await new Promise<void>((resolve) =>
-        setTimeout(resolve, 2000),
-      )
-
-      const now = new Date().toISOString()
-
-      const deal: Deal = {
-        id: previousDeal?.id ?? `deal_${Date.now()}`,
-        propertyId: dealProperty.id,
-        propertyTitle: dealProperty.title,
-        buyerId: buyer.id,
-        buyerName: buyer.name,
-        buyerEmail: buyer.email,
-        basePrice: dealProperty.basePrice,
-        dealPrice: parsedDealPrice,
-        status: dealStatus,
-        createdAt: previousDeal?.createdAt ?? now,
-        updatedAt: now,
-      }
-
-      const updatedDeals = previousDeal
-        ? deals.map((item) =>
-          item.id === previousDeal.id ? deal : item,
-        )
-        : [deal, ...deals]
-
-      persistDeals(updatedDeals)
-
-      if (!previousDeal) {
-        const latestProperties = loadProperties()
-
-        const updatedProperties = latestProperties.map((property) =>
-          property.id === dealProperty.id
-            ? {
-              ...property,
-              status: 'under_negotiation' as PropertyStatus,
-            }
-            : property,
-        )
-
-        persistProperties(updatedProperties)
-      }
-
-      setToastMessage(
-        previousDeal
-          ? 'Deal updated successfully.'
-          : 'Deal created successfully.',
-      )
-
-      setDealModalMode(null)
-      setDealProperty(null)
-      setDealPrice('')
-      setSelectedBuyerId('')
-      setDealStatus('Negotiation')
-      setEditingDealId(null)
-      setDealPriceError(null)
-      setBuyerError(null)
+      performSaveDeal(dealStatus)
     } catch (error) {
       console.error('Unable to save deal:', error)
       setToastMessage('Unable to save the deal. Please try again.')
@@ -538,13 +592,10 @@ export function PropertyListPage() {
   }
 
 
-  const query = searchQuery.trim().toLowerCase()
+  const query = searchQuery.trim().toLowerCase()//searchQuery state which takes the value whenevr user types in the search box 
 
   const filteredProperties = properties.filter((property) => {
-    const matchesSearch =
-      !query ||
-      property.title.toLowerCase().includes(query) ||
-      property.address.toLowerCase().includes(query)
+    const matchesSearch = !query || property.title.toLowerCase().includes(query) || property.address.toLowerCase().includes(query)
 
     const matchesStatus =
       statusFilter === 'all' || property.status === statusFilter
@@ -590,61 +641,13 @@ export function PropertyListPage() {
       (deal.status === 'Closed' || deal.status === 'Lost'),
   )
 
+  const isDealReadOnly = Boolean(
+    editingDealId && deals.find((deal) => deal.id === editingDealId)?.status === 'Lost',
+  )
+
 
   const columns: GridColDef[] = [
-    {
-      field: 'title',
-      headerName: 'Title',
-      flex: 1.2,
-      minWidth: 200,
-      renderCell: (params: GridRenderCellParams) => (
-        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-          {params.row.title}
-        </Typography>
-      ),
-    },
-    {
-      field: 'address',
-      headerName: 'Address',
-      flex: 1.5,
-      minWidth: 220,
-      renderCell: (params: GridRenderCellParams) => (
-        <Typography variant="body2" sx={{ color: '#475569' }}>
-          {params.row.address}
-        </Typography>
-      ),
-    },
-    {
-      field: 'basePrice',
-      headerName: 'Base Price',
-      width: 170,
-      renderCell: (params: GridRenderCellParams) => (
-        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-          {formatPrice(Number(params.row.basePrice))}
-        </Typography>
-      ),
-    },
-    {
-      field: 'status',
-      headerName: 'Status',
-      width: 180,
-      renderCell: (params: GridRenderCellParams) => {
-        const currentStatus = params.row.status as PropertyStatus
-        const config =
-          PROPERTY_STATUS_CONFIG[currentStatus] ??
-          PROPERTY_STATUS_CONFIG.available
-
-        return (
-          <Chip
-            label={config.label}
-            color={config.color}
-            size="small"
-            sx={{ fontWeight: 600 }}
-          />
-        )
-      },
-    },
-    {
+     {
       field: 'actions',
       headerName: 'Actions',
       width: 150,
@@ -699,29 +702,65 @@ export function PropertyListPage() {
         )
       },
     },
+    {
+      field: 'title',
+      headerName: 'Title',
+      flex: 1.2,
+      minWidth: 200,
+      renderCell: (params: GridRenderCellParams) => (
+        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+          {params.row.title}
+        </Typography>
+      ),
+    },
+    {
+      field: 'address',
+      headerName: 'Address',
+      flex: 1.5,
+      minWidth: 220,
+      renderCell: (params: GridRenderCellParams) => (
+        <Typography variant="body2" sx={{ color: '#475569' }}>
+          {params.row.address}
+        </Typography>
+      ),
+    },
+    {
+      field: 'basePrice',
+      headerName: 'Base Price',
+      width: 170,
+      renderCell: (params: GridRenderCellParams) => (
+        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+          {formatPrice(Number(params.row.basePrice))}
+        </Typography>
+      ),
+    },
+    {
+      field: 'status',
+      headerName: 'Status',
+      width: 180,
+      renderCell: (params: GridRenderCellParams) => {
+        const currentStatus = params.row.status as PropertyStatus
+        const config =
+          PROPERTY_STATUS_CONFIG[currentStatus] ??
+          PROPERTY_STATUS_CONFIG.available
+
+        return (
+          <Chip
+            label={config.label}
+            color={config.color}
+            size="small"
+            sx={{ fontWeight: 600 }}
+          />
+        )
+      },
+    }
   ]
 
   return (
-    <Box
-      className="flex-1 p-6 md:p-8"
-      sx={{
-        background:
-          'linear-gradient(135deg, #f0f4ff 0%, #f8fafc 50%, #f0fdf4 100%)',
-        minHeight: '100%',
-      }}
-    >
+    <Box className="flex-1 p-6 md:p-8" sx={{ background: 'linear-gradient(135deg, #f0f4ff 0%, #f8fafc 50%, #f0fdf4 100%)', minHeight: '100%', }} >
       <Container maxWidth="xl" disableGutters>
         {/* Page heading */}
-        <Box
-          sx={{
-            background:
-              'linear-gradient(135deg, #1e3a5f 0%, #1d4ed8 50%, #2563eb 100%)',
-            borderRadius: '20px',
-            p: { xs: 3, md: 4 },
-            mb: 4,
-            boxShadow: '0 20px 60px rgba(29, 78, 216, 0.2)',
-          }}
-        >
+        <Box sx={{ background: 'linear-gradient(135deg, #5f1e42 0%, #1d4ed8 50%, #2563eb 100%)', borderRadius: '20px', p: { xs: 3, md: 4 }, mb: 4, boxShadow: '0 20px 60px rgba(216, 29, 35, 0.2)', }} >
           <Box className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
             <Box>
               <Button
@@ -734,37 +773,23 @@ export function PropertyListPage() {
                 Back to Dashboard
               </Button>
 
-              <Typography
-                variant="h4"
-                component="h1"
-                sx={{ fontWeight: 800, color: '#fff' }}
-              >
+              <Typography variant="h4" component="h1" sx={{ fontWeight: 800, color: '#fff' }} >
                 Property Management
               </Typography>
 
-              <Typography
-                variant="body2"
-                sx={{ color: 'rgba(255,255,255,0.8)', mt: 0.5 }}
-              >
+              <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.8)', mt: 0.5 }} >
                 {properties.length} properties listed in the system
               </Typography>
             </Box>
+          {/* Page heading end  */}
+
 
             {isAdmin && (
               <Button
                 onClick={openCreate}
                 variant="contained"
                 startIcon={<Add />}
-                sx={{
-                  background: '#fff',
-                  color: '#1d4ed8',
-                  fontWeight: 700,
-                  borderRadius: '12px',
-                  px: 3,
-                  py: 1.5,
-                  textTransform: 'none',
-                  '&:hover': { background: '#eff6ff' },
-                }}
+                sx={{ background: '#fff', color: '#1d4ed8', fontWeight: 700, borderRadius: '12px', px: 3, py: 1.5, textTransform: 'none', '&:hover': { background: '#eff6ff' }, }}
               >
                 Add New Property
               </Button>
@@ -774,18 +799,8 @@ export function PropertyListPage() {
 
         {/* Search and filters */}
         <Box
-          sx={{
-            background: '#fff',
-            borderRadius: '20px',
-            border: '1px solid #e2e8f0',
-            p: { xs: 2, md: 3 },
-            mb: 3,
-          }}
-        >
-          <Typography
-            variant="subtitle1"
-            sx={{ fontWeight: 700, mb: 1.5 }}
-          >
+          sx={{ background: '#fff', borderRadius: '20px', border: '1px solid #e2e8f0', p: { xs: 2, md: 3 }, mb: 3, }} >
+          <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1.5 }} >
             Search Properties
           </Typography>
 
@@ -824,9 +839,7 @@ export function PropertyListPage() {
             >
               <MenuItem value="all">All Statuses</MenuItem>
               <MenuItem value="available">Available</MenuItem>
-              <MenuItem value="under_negotiation">
-                Under Negotiation
-              </MenuItem>
+              <MenuItem value="under_negotiation"> Under Negotiation </MenuItem>
               <MenuItem value="sold">Sold</MenuItem>
             </TextField>
 
@@ -846,54 +859,28 @@ export function PropertyListPage() {
               <MenuItem value="status">Status</MenuItem>
             </TextField>
 
-            {/* <TextField
-              select
-              fullWidth
-              size="small"
-              label="Order"
-              value={sortDirection}
-              onChange={(event) =>
-                setSortDirection(event.target.value as SortDirection)
-              }
-            >
-              <MenuItem value="asc">Ascending</MenuItem>
-              <MenuItem value="desc">Descending</MenuItem>
-            </TextField> */}
-
             <Button
               onClick={handleClearFilters}
               variant="outlined"
               startIcon={<RestartAlt />}
-              sx={{
-                minWidth: { xs: '100%', md: 160 },
-                textTransform: 'none',
-              }}
+              sx={{ minWidth: { xs: '100%', md: 160 }, textTransform: 'none', }}
             >
               Clear Filters
             </Button>
           </Box>
 
-          <Typography
-            variant="caption"
-            sx={{ display: 'block', mt: 1.5, color: '#64748b' }}
-          >
+          <Typography variant="caption" sx={{ display: 'block', mt: 1.5, color: '#64748b' }} >
             Showing {sortedProperties.length} of {properties.length}{' '}
             properties
           </Typography>
         </Box>
 
         {/* Property table */}
-        <Box
-          sx={{
-            background: '#fff',
-            borderRadius: '20px',
-            overflow: 'hidden',
-            mb: 2,
-          }}
-        >
+        <Box sx={{ background: '#fff', borderRadius: '20px', overflow: 'hidden', mb: 2, }} >
           <DataGrid
             rows={sortedProperties}
             columns={columns}
+            loading={isLoadingProperties}
             getRowId={(row) => row.id}
             pageSizeOptions={[5, 10, 25]}
             initialState={{
@@ -1031,8 +1018,8 @@ export function PropertyListPage() {
                       <CurrencyRupee fontSize="small" />
                     </InputAdornment>
                   ),
-                  htmlInput: { min: 1, step: 1 },
                 },
+                htmlInput: { min: 1, step: 1 },
               }}
             />
 
@@ -1089,9 +1076,11 @@ export function PropertyListPage() {
           <Box>
             <Typography variant="h6" sx={{ fontWeight: 800 }}>
               {dealModalMode === 'create'
-                ? editingDealId
-                  ? 'Edit Deal'
-                  : 'Create Deal'
+                ? isDealReadOnly
+                  ? 'View Deal (Lost - Read-Only)'
+                  : editingDealId
+                    ? 'Edit Deal'
+                    : 'Create Deal'
                 : 'Property Deals History'}
             </Typography>
 
@@ -1100,40 +1089,25 @@ export function PropertyListPage() {
             </Typography>
           </Box>
 
-          <IconButton
-            onClick={closeDealModal}
-            disabled={isSavingDeal}
-          >
+          <IconButton onClick={closeDealModal} disabled={isSavingDeal} >
             <Close />
           </IconButton>
         </DialogTitle>
 
         <DialogContent dividers>
           {dealProperty ? (
-            dealModalMode === 'create' ? (
+            dealModalMode === 'create' ? 
+            (
               <Box className="flex flex-col gap-5 pt-2">
-                {/* Attractive property summary */}
-                <Box
-                  sx={{
-                    p: 3,
-                    borderRadius: 3,
-                    color: '#fff',
-                    background:
-                      'linear-gradient(135deg, #172554 0%, #2563eb 100%)',
-                  }}
-                >
+                {isDealReadOnly && (
+                  <Alert severity="warning">
+                    This deal has been marked as Lost and is permanently locked in read-only mode.
+                  </Alert>
+                )}
+
+                <Box sx={{ p: 3, borderRadius: 3, color: '#fff', background: 'linear-gradient(135deg, #172554 0%, #2563eb 100%)', }} >
                   <Box className="flex items-center gap-3">
-                    <Box
-                      sx={{
-                        width: 48,
-                        height: 48,
-                        flexShrink: 0,
-                        borderRadius: 2,
-                        display: 'grid',
-                        placeItems: 'center',
-                        bgcolor: 'rgba(255,255,255,0.15)',
-                      }}
-                    >
+                    <Box sx={{ width: 48, height: 48, flexShrink: 0, borderRadius: 2, display: 'grid', placeItems: 'center', bgcolor: 'rgba(255,255,255,0.15)', }} >
                       <HomeWorkOutlined />
                     </Box>
 
@@ -1152,13 +1126,7 @@ export function PropertyListPage() {
                     </Box>
                   </Box>
 
-                  <Box
-                    className="mt-5 flex flex-wrap items-end justify-between gap-3"
-                    sx={{
-                      pt: 2,
-                      borderTop: '1px solid rgba(255,255,255,0.2)',
-                    }}
-                  >
+                  <Box className="mt-5 flex flex-wrap items-end justify-between gap-3" sx={{ pt: 2, borderTop: '1px solid rgba(255,255,255,0.2)', }} >
                     <Box>
                       <Typography variant="caption" sx={{ opacity: 0.8 }}>
                         Base Price
@@ -1171,11 +1139,7 @@ export function PropertyListPage() {
 
                     <Chip
                       label={editingDealId ? 'Editing Deal' : 'New Deal'}
-                      sx={{
-                        color: '#fff',
-                        bgcolor: 'rgba(255,255,255,0.16)',
-                        fontWeight: 700,
-                      }}
+                      sx={{ color: '#fff', bgcolor: 'rgba(255,255,255,0.16)', fontWeight: 700, }}
                     />
                   </Box>
                 </Box>
@@ -1190,26 +1154,26 @@ export function PropertyListPage() {
                   </Typography>
                 </Box>
 
-                <Box
-                  component="form"
-                  id="deal-form"
-                  onSubmit={handleCreateDealForm}
-                  className="flex flex-col gap-4"
-                >
+                <Box component="form" id="deal-form" onSubmit={handleCreateDealForm} className="flex flex-col gap-4" >
                   <TextField
-                    label="Agreed Deal Price"
+                    label={dealStatus === 'Closed' ? 'Agreed Selling Price' : 'Agreed Deal Price'}
                     type="number"
                     fullWidth
-                    required
-                    disabled={isSavingDeal}
-                    value={dealPrice}
+                    required={dealStatus !== 'Lost'}
+                    disabled={isSavingDeal || isDealReadOnly || dealStatus === 'Lost'}
+                    value={dealStatus === 'Lost' ? '' : dealPrice}
                     onChange={(event) => {
                       setDealPrice(event.target.value)
                       setDealPriceError(null)
                     }}
                     error={Boolean(dealPriceError)}
                     helperText={
-                      dealPriceError ?? 'Enter a positive amount in rupees.'
+                      dealStatus === 'Lost'
+                        ? 'No selling price is allowed or recorded for lost deals.'
+                        : dealPriceError ??
+                          (dealStatus === 'Closed'
+                            ? `Selling price must be greater than base price (₹${formatPrice(dealProperty.basePrice)}).`
+                            : 'Enter a positive amount in rupees.')
                     }
                     slotProps={{
                       input: {
@@ -1232,24 +1196,32 @@ export function PropertyListPage() {
                       labelId="deal-buyer-label"
                       label="Select Buyer"
                       value={selectedBuyerId}
-                      disabled={isSavingDeal || Boolean(lockedBuyerDeal)}
+                      disabled={isSavingDeal || Boolean(lockedBuyerDeal) || isLoadingBuyers || isDealReadOnly}
                       onChange={(event) => {
                         setSelectedBuyerId(String(event.target.value))
                         setBuyerError(null)
                       }}
                     >
-                      {buyers.map((buyer) => (
-                        <MenuItem key={buyer.id} value={buyer.id}>
-                          <Box>
-                            <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.3 }}>
-                              {buyer.name}
-                            </Typography>
-                            <Typography variant="caption" sx={{ color: '#64748b', lineHeight: 1.2 }}>
-                              {buyer.email}
-                            </Typography>
-                          </Box>
+                      {isLoadingBuyers ? (
+                        <MenuItem disabled value="">
+                          <Typography variant="body2" sx={{ color: '#64748b' }}>
+                            Loading buyers...
+                          </Typography>
                         </MenuItem>
-                      ))}
+                      ) : (
+                        buyers.map((buyer) => (
+                          <MenuItem key={buyer.id} value={buyer.id}>
+                            <Box>
+                              <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.3 }}>
+                                {buyer.name}
+                              </Typography>
+                              <Typography variant="caption" sx={{ color: '#64748b', lineHeight: 1.2 }}>
+                                {buyer.email}
+                              </Typography>
+                            </Box>
+                          </MenuItem>
+                        ))
+                      )}
                     </Select>
 
                     {buyerError && (
@@ -1273,21 +1245,13 @@ export function PropertyListPage() {
                     )}
                   </FormControl>
 
-                  {/* Add Buyer section */}
-                  <Box
-                    sx={{
-                      p: 2,
-                      borderRadius: 2,
-                      border: '1px solid #dbeafe',
-                      bgcolor: '#eff6ff',
-                    }}
-                  >
+                  <Box sx={{ p: 2, borderRadius: 2, border: '1px solid #dbeafe', bgcolor: '#eff6ff', }} >
 
                     <Button
                       type="button"
                       variant="outlined"
                       startIcon={<Add />}
-                      disabled={isSavingDeal || Boolean(lockedBuyerDeal)}
+                      disabled={isSavingDeal || Boolean(lockedBuyerDeal) || isDealReadOnly}
                       onClick={() => {
                         setBuyers(loadBuyers())
                         setBuyerDialogOpen(true)
@@ -1309,11 +1273,22 @@ export function PropertyListPage() {
                       label="Deal Status"
                       value={dealStatus}
                       fullWidth
-                      disabled={isSavingDeal}
-                      onChange={(event) =>
-                        setDealStatus(event.target.value as DealStatus)
+                      disabled={isSavingDeal || isDealReadOnly}
+                      onChange={(event) => {
+                        const nextStatus = event.target.value as DealStatus
+                        setDealStatus(nextStatus)
+                        setDealPriceError(null)
+                        if (nextStatus === 'Lost') {
+                          setDealPrice('')
+                        }
+                      }}
+                      helperText={
+                        isDealReadOnly
+                          ? 'This deal is lost and permanently locked.'
+                          : dealStatus === 'Lost'
+                            ? 'Marking as Lost will lock this deal and clear the selling price.'
+                            : 'Buyer changes are restricted for Closed or Lost deals.'
                       }
-                      helperText="Buyer changes are restricted for Closed or Lost deals."
                     >
                       <MenuItem value="Negotiation">Negotiation</MenuItem>
                       <MenuItem value="Closed">Closed</MenuItem>
@@ -1322,17 +1297,19 @@ export function PropertyListPage() {
                   )}
                 </Box>
               </Box>
-            ) : (
+            ) 
+            : 
+            (
               <Box className="flex flex-col gap-3 pt-2">
                 <Typography variant="body2">
                   <strong>Property ID:</strong> {dealProperty.id}
                 </Typography>
 
-                {propertyDeals.length === 0 ? (
-                  <Alert severity="info">
-                    No deals have been recorded for this property yet.
-                  </Alert>
-                ) : (
+                {isLoadingDeals
+                   ? ( <Box className="flex justify-center py-4"> <CircularProgress size={28} /> </Box> )
+                 : propertyDeals.length === 0 
+                     ? ( <Alert severity="info"> No deals have been recorded for this property yet. </Alert> ) 
+                 : (
                   propertyDeals.map((deal) => (
                     <Box
                       key={deal.id}
@@ -1341,17 +1318,14 @@ export function PropertyListPage() {
                       <Box className="flex flex-col justify-between gap-2 sm:flex-row">
                         <Box>
                           <Typography sx={{ fontWeight: 700 }}>
-                            {formatPrice(deal.dealPrice)}
+                            {deal.status === 'Lost' ? 'No Selling Price (Lost)' : formatPrice(deal.dealPrice)}
                           </Typography>
 
                           <Typography variant="body2">
                             Buyer: {deal.buyerName}
                           </Typography>
 
-                          <Typography
-                            variant="caption"
-                            color="text.secondary"
-                          >
+                          <Typography variant="caption" color="text.secondary" >
                             {deal.buyerEmail}
                           </Typography>
                         </Box>
@@ -1369,33 +1343,23 @@ export function PropertyListPage() {
                         />
                       </Box>
 
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ display: 'block', mt: 1 }}
-                      >
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }} >
                         Created: {new Date(deal.createdAt).toLocaleString()}
                       </Typography>
 
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ display: 'block' }}
-                      >
+                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }} >
                         Updated: {new Date(deal.updatedAt).toLocaleString()}
                       </Typography>
 
-                      {/* "View / Edit Deal" is shown only when the property is actively under negotiation.
-                          Once the property is Sold or back to Available, editing is locked. */}
-                      {properties.find((p) => p.id === deal.propertyId)?.status === 'under_negotiation' && (
-                        <Button
-                          size="small"
-                          sx={{ mt: 1, textTransform: 'none' }}
-                          onClick={() => openEditDeal(deal)}
-                        >
-                          View / Edit Deal
-                        </Button>
-                      )}
+                      <Button
+                        size="small"
+                        sx={{ mt: 1, textTransform: 'none' }}
+                        onClick={() => openEditDeal(deal)}
+                      >
+                        {deal.status === 'Negotiation' && properties.find((p) => p.id === deal.propertyId)?.status === 'under_negotiation'
+                          ? 'Edit Deal'
+                          : 'View Deal'}
+                      </Button>
                     </Box>
                   ))
                 )}
@@ -1417,37 +1381,72 @@ export function PropertyListPage() {
               {openedFromHistory ? ' Back to History' : 'Cancel'}
             </Button>
 
-            <Button
-              type="submit"
-              form="deal-form"
-              variant="contained"
-              disabled={isSavingDeal}
-              startIcon={
-                isSavingDeal ? (
-                  <CircularProgress size={16} color="inherit" />
-                ) : (
-                  <HandshakeOutlined />
-                )
-              }
-              sx={{
-                px: 3,
-                py: 1,
-                borderRadius: 2,
-                fontWeight: 700,
-                textTransform: 'none',
-              }}
-            >
-              {isSavingDeal
-                ? 'Saving Deal...'
-                : editingDealId
-                  ? 'Save Changes'
-                  : 'Create Deal'}
-            </Button>
+            {!isDealReadOnly && (
+              <Button
+                type="submit"
+                form="deal-form"
+                variant="contained"
+                disabled={isSavingDeal}
+                startIcon={
+                  isSavingDeal ? (
+                    <CircularProgress size={16} color="inherit" />
+                  ) : (
+                    <HandshakeOutlined />
+                  )
+                }
+                sx={{
+                  px: 3,
+                  py: 1,
+                  borderRadius: 2,
+                  fontWeight: 700,
+                  textTransform: 'none',
+                }}
+              >
+                {isSavingDeal
+                  ? 'Saving Deal...'
+                  : editingDealId
+                    ? dealStatus === 'Lost'
+                      ? 'Mark as Lost'
+                      : dealStatus === 'Closed'
+                        ? 'Close Deal'
+                        : 'Save Changes'
+                    : 'Create Deal'}
+              </Button>
+            )}
           </DialogActions>
         )}
       </Dialog>
 
-      {/* Keep this as a sibling dialog so deal state is preserved. */}
+      <Dialog
+        open={confirmLostOpen}
+        onClose={() => setConfirmLostOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontWeight: 700 }}>
+          Confirm Deal as Lost
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2">
+            Are you sure you want to mark this deal as Lost? Once marked as Lost, no selling price will be recorded and this deal will become permanently read-only.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button onClick={() => setConfirmLostOpen(false)} variant="outlined">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmLost}
+            variant="contained"
+            color="error"
+            disabled={isSavingDeal}
+          >
+            Confirm & Mark as Lost
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Keep this as a  dialog so deal state is preserved. */}
       <UserFormDialog
         open={buyerDialogOpen}
         onClose={() => setBuyerDialogOpen(false)}
