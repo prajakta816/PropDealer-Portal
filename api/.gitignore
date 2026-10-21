@@ -1,0 +1,9 @@
+.env
+node_modules/
+generated/
+
+# Local AI coding-tool configuration
+.agents/
+.claude/
+.windsurf/
+skills-lock.json
