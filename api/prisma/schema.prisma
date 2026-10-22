@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
@@ -6,4 +5,30 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+enum UserRole {
+  Admin
+  Agent
+  CommissionManager
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         UserRole
+
+  createdAt   DateTime @default(now())
+  createdById Int?
+
+  updatedAt   DateTime @updatedAt
+  updatedById Int?
+
+  createdBy User? @relation("UserCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User? @relation("UserUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  usersCreated User[] @relation("UserCreatedBy")
+  usersUpdated User[] @relation("UserUpdatedBy")
 }
