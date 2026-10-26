@@ -6,6 +6,7 @@
   "scripts": {
     "start": "tsx server.js",
     "dev": "tsx watch server.js",
+    "typecheck": "tsc --noEmit",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -22,9 +23,11 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@types/express": "^5.0.6",
     "nodemon": "^3.1.14",
     "prisma": "^7.10.1",
-    "tsx": "^4.23.15"
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
   },
   "allowScripts": {
     "prisma@7.10.1": true,
