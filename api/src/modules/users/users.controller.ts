@@ -1,8 +1,22 @@
 
-import type { Request, Response, NextFunction } from 'express';
+import { type Request, type Response, type NextFunction, response } from 'express';
 import { Prisma } from '../../../generated/prisma/client.js';
-import { createUserService } from './users.service.js';
+import { createUserService, getAllUsersService } from './users.service.js';
 import type { CreateUserInput } from './users.validation.js';
+
+export const getAllUsers =  async(req:Request, res:Response, next:NextFunction,)=>{
+try{
+  const users = await getAllUsersService();
+
+  return res.status(200).json({
+    success:true,
+    message:"users retrived successfully",
+    data:users
+  })
+}catch(error){
+    next(error)
+}
+}
 
 export const createUser = async (
   req: Request,
@@ -10,7 +24,6 @@ export const createUser = async (
   next: NextFunction,
 ) => {
   try {
-    // The validation middleware has already validated the request.
     const input = req.body as CreateUserInput;
 
     const createdRecord = await createUserService(input);

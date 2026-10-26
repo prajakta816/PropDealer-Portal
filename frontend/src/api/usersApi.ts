@@ -28,6 +28,40 @@ interface CreateUserResponse {
     message: string;
   }>;
 }
+export interface userResponse{
+  success:boolean,
+  message:string,
+  data?:CreatedUser[]
+}
+
+export async function getAllUserApi():Promise<CreatedUser[]>{
+  try {
+    const response = await axios.get<userResponse>('api/users');
+    const result = response.data
+    if(!result.success || !Array.isArray(result.data))
+    {
+      throw new Error(result.message || "failed to get the users");
+    }
+
+    return result.data;
+
+  } catch (error : unknown) {
+    if (axios.isAxiosError<userResponse>(error)) {
+      throw new Error(
+        error.response?.data?.message ||
+          'Unable to retrieve users. Please try again.',
+        { cause: error },
+      );
+    }
+
+    if (error instanceof Error) {
+      throw error;
+    }
+
+    throw new Error('An unexpected error occurred.', { cause: error });
+    
+  }
+}
 
 export async function createUserApi(
   userData: CreateUserRequest,
