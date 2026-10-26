@@ -1,43 +1,6 @@
 import { useState, useEffect, type FormEvent } from 'react'
-import {
-  Alert,
-  Avatar,
-  Box,
-  Button,
-  Chip,
-  CircularProgress,
-  Container,
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  FormControl,
-  IconButton,
-  InputAdornment,
-  MenuItem,
-  Select,
-  Snackbar,
-  TextField,
-  Tooltip,
-  Typography,
-} from '@mui/material'
-import {
-  Add,
-  ArrowBack,
-  BadgeOutlined,
-  Close,
-  DeleteOutlined,
-  EditOutlined,
-  EmailOutlined,
-  FilterList,
-  KeyOutlined,
-  Person,
-  PersonOutlined,
-  RestartAlt,
-  Search,
-  Visibility,
-  VisibilityOff,
-  VisibilityOutlined,
-} from '@mui/icons-material'
+import { Alert, Avatar, Box, Button, Chip, CircularProgress, Container, Dialog, DialogContent, DialogTitle, FormControl, IconButton, InputAdornment, MenuItem, Select, Snackbar, TextField, Tooltip, Typography, } from '@mui/material'
+import { Add, ArrowBack, BadgeOutlined, Close, DeleteOutlined, EditOutlined, EmailOutlined, FilterList, KeyOutlined, Person, PersonOutlined, RestartAlt, Search, Visibility, VisibilityOff, VisibilityOutlined, } from '@mui/icons-material'
 import { DataGrid, type GridColDef, type GridRenderCellParams } from '@mui/x-data-grid'
 import { Link as RouterLink } from 'react-router-dom'
 import {
@@ -46,6 +9,7 @@ import {
   type User,
   type StoredUser,
 } from '../context'
+import{createUserApi} from '../api/usersApi'
 import { ROLES, type UserRole } from '../constants/roles'
 
 const ROLE_COLORS: Record<UserRole, 'primary' | 'success' | 'secondary' | 'warning'> = {
@@ -232,132 +196,287 @@ export function UserListPage() {
     setUserToDelete(null)
   }
 
+  // const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  //   e.preventDefault()
+  //   clearErrors()
+
+  //   let hasError = false
+
+  //   if (!name.trim()) {
+  //     setNameError('Full name is required.')
+  //     hasError = true
+  //   }
+
+  //   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  //   if (!email.trim()) {
+  //     setEmailError('Email address is required.')
+  //     hasError = true
+  //   } else if (!emailRegex.test(email.trim())) {
+  //     setEmailError('Please enter a valid email address.')
+  //     hasError = true
+  //   }
+
+  //   if (modalMode === 'create') {
+  //     if (!password) {
+  //       setPasswordError('Password is required.')
+  //       hasError = true
+  //     } else if (password.length < 6) {
+  //       setPasswordError('Password must be at least 6 characters.')
+  //       hasError = true
+  //     }
+
+  //     if (!confirmPassword) {
+  //       setConfirmPasswordError('Please confirm your password.')
+  //       hasError = true
+  //     } else if (password !== confirmPassword) {
+  //       setConfirmPasswordError('Passwords do not match.')
+  //       hasError = true
+  //     }
+  //   }
+
+  //   if (modalMode === 'edit' && password) {
+  //     if (password.length < 6) {
+  //       setPasswordError('New password must be at least 6 characters.')
+  //       hasError = true
+  //     }
+
+  //     if (!confirmPassword) {
+  //       setConfirmPasswordError('Please confirm your new password.')
+  //       hasError = true
+  //     } else if (password !== confirmPassword) {
+  //       setConfirmPasswordError('Passwords do not match.')
+  //       hasError = true
+  //     }
+  //   }
+
+  //   if (hasError) {
+  //     return
+  //   }
+
+  //   setIsSubmitting(true)
+  //   await new Promise((resolve) => setTimeout(resolve, 2000))
+
+  //   try {
+  //     const rawData = localStorage.getItem(USERS_STORAGE_KEY)
+  //     const existingUsers: StoredUser[] = rawData ? JSON.parse(rawData) : []
+
+  //     if (modalMode === 'create') {
+  //       const emailExists = existingUsers.some(
+  //         (u) => u.email.trim().toLowerCase() === email.trim().toLowerCase()
+  //       )
+  //       if (emailExists) {
+  //         setErrorMessage('A user with this email address already exists.')
+  //         setIsSubmitting(false)
+  //         return
+  //       }
+
+  //       const passwordHash = await hashPassword(password)
+  //       const newUser: StoredUser = {
+  //         id: `usr_${Date.now()}`,
+  //         name: name.trim(),
+  //         email: email.trim().toLowerCase(),
+  //         role: role,
+  //         passwordHash: passwordHash,
+  //         createdAt: new Date().toISOString(),
+  //       }
+  //       existingUsers.push(newUser)
+  //       localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(existingUsers))
+  //       setToastSeverity('success')
+  //       setToastMessage(`${newUser.name} has been registered successfully.`)
+  //     }
+
+  //     if (modalMode === 'edit' && selectedUser) {
+  //       const emailExists = existingUsers.some(
+  //         (u) =>
+  //           u.email.trim().toLowerCase() === email.trim().toLowerCase() &&
+  //           u.id !== selectedUser.id
+  //       )
+  //       if (emailExists) {
+  //         setErrorMessage('Another user with this email already exists.')
+  //         setIsSubmitting(false)
+  //         return
+  //       }
+
+  //       const updatedUsers = await Promise.all(
+  //         existingUsers.map(async (u) => {
+  //           if (u.id !== selectedUser.id) return u
+  //           return {
+  //             ...u,
+  //             name: name.trim(),
+  //             email: email.trim().toLowerCase(),
+  //             role: role,
+  //             passwordHash: password ? await hashPassword(password) : u.passwordHash,
+  //           }
+  //         })
+  //       )
+  //       localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers))
+  //       setToastSeverity('success')
+  //       setToastMessage(`${name.trim()} has been updated successfully.`)
+  //     }
+
+  //     setUsers(loadUsers())
+  //     closeModal()
+  //   } catch {
+  //     setErrorMessage('Something went wrong. Please try again.')
+  //   } finally {
+  //     setIsSubmitting(false)
+  //   }
+  // }
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    clearErrors()
+  e.preventDefault()
+  clearErrors()
 
-    let hasError = false
+  let hasError = false
 
-    if (!name.trim()) {
-      setNameError('Full name is required.')
+  if (!name.trim()) {
+    setNameError('Full name is required.')
+    hasError = true
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+  if (!email.trim()) {
+    setEmailError('Email address is required.')
+    hasError = true
+  } else if (!emailRegex.test(email.trim())) {
+    setEmailError('Please enter a valid email address.')
+    hasError = true
+  }
+
+  if (modalMode === 'create') {
+    if (!password) {
+      setPasswordError('Password is required.')
+      hasError = true
+    } else if (password.length < 6) {
+      setPasswordError('Password must be at least 6 characters.')
       hasError = true
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!email.trim()) {
-      setEmailError('Email address is required.')
+    if (!confirmPassword) {
+      setConfirmPasswordError('Please confirm your password.')
       hasError = true
-    } else if (!emailRegex.test(email.trim())) {
-      setEmailError('Please enter a valid email address.')
+    } else if (password !== confirmPassword) {
+      setConfirmPasswordError('Passwords do not match.')
+      hasError = true
+    }
+  }
+
+  if (modalMode === 'edit' && password) {
+    if (password.length < 6) {
+      setPasswordError('New password must be at least 6 characters.')
       hasError = true
     }
 
+    if (!confirmPassword) {
+      setConfirmPasswordError('Please confirm your new password.')
+      hasError = true
+    } else if (password !== confirmPassword) {
+      setConfirmPasswordError('Passwords do not match.')
+      hasError = true
+    }
+  }
+
+  if (hasError) {
+    return
+  }
+
+  setIsSubmitting(true)
+
+  try {
     if (modalMode === 'create') {
-      if (!password) {
-        setPasswordError('Password is required.')
-        hasError = true
-      } else if (password.length < 6) {
-        setPasswordError('Password must be at least 6 characters.')
-        hasError = true
+      if (
+        role !== ROLES.AGENT &&
+        role !== ROLES.COMMISSION_MANAGER
+      ) {
+        setErrorMessage(
+          'Currently, only Agent and Commission Manager accounts can be created.'
+        )
+        return
       }
 
-      if (!confirmPassword) {
-        setConfirmPasswordError('Please confirm your password.')
-        hasError = true
-      } else if (password !== confirmPassword) {
-        setConfirmPasswordError('Passwords do not match.')
-        hasError = true
-      }
-    }
+      const createdUser = await createUserApi({
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+        password,
+        role,
+      })
 
-    if (modalMode === 'edit' && password) {
-      if (password.length < 6) {
-        setPasswordError('New password must be at least 6 characters.')
-        hasError = true
-      }
+      setUsers((currentUsers) => [
+        ...currentUsers,
+        createdUser,
+      ])
 
-      if (!confirmPassword) {
-        setConfirmPasswordError('Please confirm your new password.')
-        hasError = true
-      } else if (password !== confirmPassword) {
-        setConfirmPasswordError('Passwords do not match.')
-        hasError = true
-      }
-    }
+      setToastSeverity('success')
+      setToastMessage(
+        `${createdUser.name} has been registered successfully.`
+      )
 
-    if (hasError) {
+      closeModal()
       return
     }
 
-    setIsSubmitting(true)
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-
-    try {
+    if (modalMode === 'edit' && selectedUser) {
       const rawData = localStorage.getItem(USERS_STORAGE_KEY)
-      const existingUsers: StoredUser[] = rawData ? JSON.parse(rawData) : []
+      const existingUsers: StoredUser[] = rawData
+        ? JSON.parse(rawData)
+        : []
 
-      if (modalMode === 'create') {
-        const emailExists = existingUsers.some(
-          (u) => u.email.trim().toLowerCase() === email.trim().toLowerCase()
+      const emailExists = existingUsers.some(
+        (u) =>
+          u.email.trim().toLowerCase() ===
+            email.trim().toLowerCase() &&
+          u.id !== selectedUser.id
+      )
+
+      if (emailExists) {
+        setErrorMessage(
+          'Another user with this email already exists.'
         )
-        if (emailExists) {
-          setErrorMessage('A user with this email address already exists.')
-          setIsSubmitting(false)
-          return
-        }
-
-        const passwordHash = await hashPassword(password)
-        const newUser: StoredUser = {
-          id: `usr_${Date.now()}`,
-          name: name.trim(),
-          email: email.trim().toLowerCase(),
-          role: role,
-          passwordHash: passwordHash,
-          createdAt: new Date().toISOString(),
-        }
-        existingUsers.push(newUser)
-        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(existingUsers))
-        setToastSeverity('success')
-        setToastMessage(`${newUser.name} has been registered successfully.`)
+        return
       }
 
-      if (modalMode === 'edit' && selectedUser) {
-        const emailExists = existingUsers.some(
-          (u) =>
-            u.email.trim().toLowerCase() === email.trim().toLowerCase() &&
-            u.id !== selectedUser.id
-        )
-        if (emailExists) {
-          setErrorMessage('Another user with this email already exists.')
-          setIsSubmitting(false)
-          return
-        }
+      const updatedUsers = await Promise.all(
+        existingUsers.map(async (u) => {
+          if (u.id !== selectedUser.id) {
+            return u
+          }
 
-        const updatedUsers = await Promise.all(
-          existingUsers.map(async (u) => {
-            if (u.id !== selectedUser.id) return u
-            return {
-              ...u,
-              name: name.trim(),
-              email: email.trim().toLowerCase(),
-              role: role,
-              passwordHash: password ? await hashPassword(password) : u.passwordHash,
-            }
-          })
-        )
-        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers))
-        setToastSeverity('success')
-        setToastMessage(`${name.trim()} has been updated successfully.`)
-      }
+          return {
+            ...u,
+            name: name.trim(),
+            email: email.trim().toLowerCase(),
+            role,
+            passwordHash: password
+              ? await hashPassword(password)
+              : u.passwordHash,
+          }
+        })
+      )
+
+      localStorage.setItem(
+        USERS_STORAGE_KEY,
+        JSON.stringify(updatedUsers)
+      )
 
       setUsers(loadUsers())
+
+      setToastSeverity('success')
+      setToastMessage(
+        `${name.trim()} has been updated successfully.`
+      )
+
       closeModal()
-    } catch {
-      setErrorMessage('Something went wrong. Please try again.')
-    } finally {
-      setIsSubmitting(false)
     }
+  } catch (error: unknown) {
+    setErrorMessage(
+      error instanceof Error
+        ? error.message
+        : 'Something went wrong. Please try again.'
+    )
+  } finally {
+    setIsSubmitting(false)
   }
+}
 
   const columns: GridColDef[] = [
     {
