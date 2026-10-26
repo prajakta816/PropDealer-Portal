@@ -1,3 +1,4 @@
+
 generator client {
   provider = "prisma-client"
   output   = "../generated/prisma"
@@ -26,9 +27,31 @@ model User {
   updatedAt   DateTime @updatedAt
   updatedById String?  @db.Uuid
 
+  // A User can be created or updated by another User.
   createdBy User? @relation("UserCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   updatedBy User? @relation("UserUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
 
+  // Reverse sides of the User audit relations.
   usersCreated User[] @relation("UserCreatedBy")
   usersUpdated User[] @relation("UserUpdatedBy")
+
+  // Buyers created or updated by this User.
+  buyersCreated Buyer[] @relation("BuyerCreatedBy")
+  buyersUpdated Buyer[] @relation("BuyerUpdatedBy")
+}
+
+model Buyer {
+  id    String @id @default(uuid()) @db.Uuid
+  name  String
+  email String @unique
+
+  createdAt   DateTime @default(now())
+  createdById String?  @db.Uuid
+
+  updatedAt   DateTime @updatedAt
+  updatedById String?  @db.Uuid
+
+  // The User who created or last updated this Buyer.
+  createdBy User? @relation("BuyerCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User? @relation("BuyerUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
 }
