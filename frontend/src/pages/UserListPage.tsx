@@ -6,10 +6,11 @@ import { Link as RouterLink } from 'react-router-dom'
 import {
   USERS_STORAGE_KEY,
   hashPassword,
+  useAuth,
   type User,
   type StoredUser,
 } from '../context'
-import{createUserApi} from '../api/usersApi'
+import { createUserApi } from '../api/usersApi'
 import { ROLES, type UserRole } from '../constants/roles'
 
 const ROLE_COLORS: Record<UserRole, 'primary' | 'success' | 'secondary' | 'warning'> = {
@@ -47,6 +48,9 @@ type SortField = 'name' | 'email' | 'role'
 type SortDirection = 'asc' | 'desc'
 
 export function UserListPage() {
+  const { user: currentUser } = useAuth()
+  const isCurrentUserAdmin = currentUser?.role === ROLES.ADMIN
+
   const [users, setUsers] = useState<User[]>([])
   const [isLoadingUsers, setIsLoadingUsers] = useState(true)
 
@@ -196,287 +200,190 @@ export function UserListPage() {
     setUserToDelete(null)
   }
 
-  // const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-  //   e.preventDefault()
-  //   clearErrors()
-
-  //   let hasError = false
-
-  //   if (!name.trim()) {
-  //     setNameError('Full name is required.')
-  //     hasError = true
-  //   }
-
-  //   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-  //   if (!email.trim()) {
-  //     setEmailError('Email address is required.')
-  //     hasError = true
-  //   } else if (!emailRegex.test(email.trim())) {
-  //     setEmailError('Please enter a valid email address.')
-  //     hasError = true
-  //   }
-
-  //   if (modalMode === 'create') {
-  //     if (!password) {
-  //       setPasswordError('Password is required.')
-  //       hasError = true
-  //     } else if (password.length < 6) {
-  //       setPasswordError('Password must be at least 6 characters.')
-  //       hasError = true
-  //     }
-
-  //     if (!confirmPassword) {
-  //       setConfirmPasswordError('Please confirm your password.')
-  //       hasError = true
-  //     } else if (password !== confirmPassword) {
-  //       setConfirmPasswordError('Passwords do not match.')
-  //       hasError = true
-  //     }
-  //   }
-
-  //   if (modalMode === 'edit' && password) {
-  //     if (password.length < 6) {
-  //       setPasswordError('New password must be at least 6 characters.')
-  //       hasError = true
-  //     }
-
-  //     if (!confirmPassword) {
-  //       setConfirmPasswordError('Please confirm your new password.')
-  //       hasError = true
-  //     } else if (password !== confirmPassword) {
-  //       setConfirmPasswordError('Passwords do not match.')
-  //       hasError = true
-  //     }
-  //   }
-
-  //   if (hasError) {
-  //     return
-  //   }
-
-  //   setIsSubmitting(true)
-  //   await new Promise((resolve) => setTimeout(resolve, 2000))
-
-  //   try {
-  //     const rawData = localStorage.getItem(USERS_STORAGE_KEY)
-  //     const existingUsers: StoredUser[] = rawData ? JSON.parse(rawData) : []
-
-  //     if (modalMode === 'create') {
-  //       const emailExists = existingUsers.some(
-  //         (u) => u.email.trim().toLowerCase() === email.trim().toLowerCase()
-  //       )
-  //       if (emailExists) {
-  //         setErrorMessage('A user with this email address already exists.')
-  //         setIsSubmitting(false)
-  //         return
-  //       }
-
-  //       const passwordHash = await hashPassword(password)
-  //       const newUser: StoredUser = {
-  //         id: `usr_${Date.now()}`,
-  //         name: name.trim(),
-  //         email: email.trim().toLowerCase(),
-  //         role: role,
-  //         passwordHash: passwordHash,
-  //         createdAt: new Date().toISOString(),
-  //       }
-  //       existingUsers.push(newUser)
-  //       localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(existingUsers))
-  //       setToastSeverity('success')
-  //       setToastMessage(`${newUser.name} has been registered successfully.`)
-  //     }
-
-  //     if (modalMode === 'edit' && selectedUser) {
-  //       const emailExists = existingUsers.some(
-  //         (u) =>
-  //           u.email.trim().toLowerCase() === email.trim().toLowerCase() &&
-  //           u.id !== selectedUser.id
-  //       )
-  //       if (emailExists) {
-  //         setErrorMessage('Another user with this email already exists.')
-  //         setIsSubmitting(false)
-  //         return
-  //       }
-
-  //       const updatedUsers = await Promise.all(
-  //         existingUsers.map(async (u) => {
-  //           if (u.id !== selectedUser.id) return u
-  //           return {
-  //             ...u,
-  //             name: name.trim(),
-  //             email: email.trim().toLowerCase(),
-  //             role: role,
-  //             passwordHash: password ? await hashPassword(password) : u.passwordHash,
-  //           }
-  //         })
-  //       )
-  //       localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers))
-  //       setToastSeverity('success')
-  //       setToastMessage(`${name.trim()} has been updated successfully.`)
-  //     }
-
-  //     setUsers(loadUsers())
-  //     closeModal()
-  //   } catch {
-  //     setErrorMessage('Something went wrong. Please try again.')
-  //   } finally {
-  //     setIsSubmitting(false)
-  //   }
-  // }
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-  e.preventDefault()
-  clearErrors()
+    e.preventDefault()
+    clearErrors()
 
-  let hasError = false
+    let hasError = false
 
-  if (!name.trim()) {
-    setNameError('Full name is required.')
-    hasError = true
-  }
-
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-
-  if (!email.trim()) {
-    setEmailError('Email address is required.')
-    hasError = true
-  } else if (!emailRegex.test(email.trim())) {
-    setEmailError('Please enter a valid email address.')
-    hasError = true
-  }
-
-  if (modalMode === 'create') {
-    if (!password) {
-      setPasswordError('Password is required.')
-      hasError = true
-    } else if (password.length < 6) {
-      setPasswordError('Password must be at least 6 characters.')
+    if (!name.trim()) {
+      setNameError('Full name is required.')
       hasError = true
     }
 
-    if (!confirmPassword) {
-      setConfirmPasswordError('Please confirm your password.')
-      hasError = true
-    } else if (password !== confirmPassword) {
-      setConfirmPasswordError('Passwords do not match.')
-      hasError = true
-    }
-  }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-  if (modalMode === 'edit' && password) {
-    if (password.length < 6) {
-      setPasswordError('New password must be at least 6 characters.')
+    if (!email.trim()) {
+      setEmailError('Email address is required.')
+      hasError = true
+    } else if (!emailRegex.test(email.trim())) {
+      setEmailError('Please enter a valid email address.')
       hasError = true
     }
 
-    if (!confirmPassword) {
-      setConfirmPasswordError('Please confirm your new password.')
-      hasError = true
-    } else if (password !== confirmPassword) {
-      setConfirmPasswordError('Passwords do not match.')
-      hasError = true
-    }
-  }
-
-  if (hasError) {
-    return
-  }
-
-  setIsSubmitting(true)
-
-  try {
     if (modalMode === 'create') {
-      if (
-        role !== ROLES.AGENT &&
-        role !== ROLES.COMMISSION_MANAGER
-      ) {
-        setErrorMessage(
-          'Currently, only Agent and Commission Manager accounts can be created.'
-        )
+      if (role === ROLES.ADMIN && !isCurrentUserAdmin) {
+        setErrorMessage('Only an administrator has permission to create another Admin account.')
         return
       }
 
-      const createdUser = await createUserApi({
-        name: name.trim(),
-        email: email.trim().toLowerCase(),
-        password,
-        role,
-      })
+      if (role !== ROLES.BUYER) {
+        if (!password) {
+          setPasswordError('Password is required.')
+          hasError = true
+        } else if (password.length < 8) {
+          setPasswordError('Password must contain at least 8 characters.')
+          hasError = true
+        }
 
-      setUsers((currentUsers) => [
-        ...currentUsers,
-        createdUser,
-      ])
+        if (!confirmPassword) {
+          setConfirmPasswordError('Please confirm your password.')
+          hasError = true
+        } else if (password !== confirmPassword) {
+          setConfirmPasswordError('Passwords do not match.')
+          hasError = true
+        }
+      }
+    }
 
-      setToastSeverity('success')
-      setToastMessage(
-        `${createdUser.name} has been registered successfully.`
-      )
+    if (modalMode === 'edit' && password) {
+      if (password.length < 8) {
+        setPasswordError('New password must contain at least 8 characters.')
+        hasError = true
+      }
 
-      closeModal()
+      if (!confirmPassword) {
+        setConfirmPasswordError('Please confirm your new password.')
+        hasError = true
+      } else if (password !== confirmPassword) {
+        setConfirmPasswordError('Passwords do not match.')
+        hasError = true
+      }
+    }
+
+    if (hasError) {
       return
     }
 
-    if (modalMode === 'edit' && selectedUser) {
-      const rawData = localStorage.getItem(USERS_STORAGE_KEY)
-      const existingUsers: StoredUser[] = rawData
-        ? JSON.parse(rawData)
-        : []
+    setIsSubmitting(true)
 
-      const emailExists = existingUsers.some(
-        (u) =>
-          u.email.trim().toLowerCase() ===
-            email.trim().toLowerCase() &&
-          u.id !== selectedUser.id
-      )
+    try {
+      if (modalMode === 'create') {
+        const allowedRoles: UserRole[] = isCurrentUserAdmin
+          ? [ROLES.ADMIN, ROLES.AGENT, ROLES.COMMISSION_MANAGER, ROLES.BUYER]
+          : [ROLES.AGENT, ROLES.COMMISSION_MANAGER, ROLES.BUYER]
 
-      if (emailExists) {
-        setErrorMessage(
-          'Another user with this email already exists.'
+        if (!allowedRoles.includes(role)) {
+          setErrorMessage(
+            isCurrentUserAdmin
+              ? 'Please select a valid role.'
+              : 'Only administrators have permission to create an Admin account.'
+          )
+          return
+        }
+
+        const createdUser = await createUserApi({
+          name: name.trim(),
+          email: email.trim().toLowerCase(),
+          password: role !== ROLES.BUYER ? password : '',
+          role,
+        })
+
+        setUsers((currentUsers) => [
+          ...currentUsers,
+          createdUser,
+        ])
+
+        try {
+          const rawData = localStorage.getItem(USERS_STORAGE_KEY)
+          const existingUsers: StoredUser[] = rawData ? JSON.parse(rawData) : []
+          const updatedUsers: StoredUser[] = [
+            ...existingUsers,
+            {
+              id: createdUser.id,
+              name: createdUser.name,
+              email: createdUser.email,
+              role: createdUser.role,
+              createdAt: createdUser.createdAt,
+              passwordHash: password ? await hashPassword(password) : '',
+            },
+          ]
+          localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers))
+        } catch (storageErr) {
+          console.error('Failed to update local storage:', storageErr)
+        }
+
+        setToastSeverity('success')
+        setToastMessage(
+          `${createdUser.name} (${createdUser.role}) has been created successfully.`
         )
+
+        closeModal()
         return
       }
 
-      const updatedUsers = await Promise.all(
-        existingUsers.map(async (u) => {
-          if (u.id !== selectedUser.id) {
-            return u
-          }
+      if (modalMode === 'edit' && selectedUser) {
+        const rawData = localStorage.getItem(USERS_STORAGE_KEY)
+        const existingUsers: StoredUser[] = rawData
+          ? JSON.parse(rawData)
+          : []
 
-          return {
-            ...u,
-            name: name.trim(),
-            email: email.trim().toLowerCase(),
-            role,
-            passwordHash: password
-              ? await hashPassword(password)
-              : u.passwordHash,
-          }
-        })
+        const emailExists = existingUsers.some(
+          (u) =>
+            u.email.trim().toLowerCase() ===
+              email.trim().toLowerCase() &&
+            u.id !== selectedUser.id
+        )
+
+        if (emailExists) {
+          setErrorMessage(
+            'Another user with this email already exists.'
+          )
+          return
+        }
+
+        const updatedUsers = await Promise.all(
+          existingUsers.map(async (u) => {
+            if (u.id !== selectedUser.id) {
+              return u
+            }
+
+            return {
+              ...u,
+              name: name.trim(),
+              email: email.trim().toLowerCase(),
+              role,
+              passwordHash: password
+                ? await hashPassword(password)
+                : u.passwordHash,
+            }
+          })
+        )
+
+        localStorage.setItem(
+          USERS_STORAGE_KEY,
+          JSON.stringify(updatedUsers)
+        )
+
+        setUsers(loadUsers())
+
+        setToastSeverity('success')
+        setToastMessage(
+          `${name.trim()} has been updated successfully.`
+        )
+
+        closeModal()
+      }
+    } catch (error: unknown) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : 'Something went wrong. Please try again.'
       )
-
-      localStorage.setItem(
-        USERS_STORAGE_KEY,
-        JSON.stringify(updatedUsers)
-      )
-
-      setUsers(loadUsers())
-
-      setToastSeverity('success')
-      setToastMessage(
-        `${name.trim()} has been updated successfully.`
-      )
-
-      closeModal()
+    } finally {
+      setIsSubmitting(false)
     }
-  } catch (error: unknown) {
-    setErrorMessage(
-      error instanceof Error
-        ? error.message
-        : 'Something went wrong. Please try again.'
-    )
-  } finally {
-    setIsSubmitting(false)
   }
-}
 
   const columns: GridColDef[] = [
     {
@@ -908,7 +815,9 @@ export function UserListPage() {
             </Typography>
             <Typography variant="caption" className="!text-slate-500">
               {modalMode === 'create'
-                ? 'Register an Agent, Commission Manager, or Buyer.'
+                ? isCurrentUserAdmin
+                  ? 'Register an Admin, Agent, Commission Manager, or Buyer.'
+                  : 'Register an Agent, Commission Manager, or Buyer.'
                 : 'Update user details. Leave password blank to keep existing.'}
             </Typography>
           </Box>
@@ -999,6 +908,18 @@ export function UserListPage() {
                     </InputAdornment>
                   }
                 >
+                  {isCurrentUserAdmin && (
+                    <MenuItem value={ROLES.ADMIN}>
+                      <Box className="flex items-center gap-2">
+                        <span>Administrator (Admin)</span>
+                        <Chip
+                          label="Admin Only"
+                          size="small"
+                          sx={{ height: 18, fontSize: '0.65rem', fontWeight: 700, backgroundColor: '#eff6ff', color: '#1d4ed8', }}
+                        />
+                      </Box>
+                    </MenuItem>
+                  )}
                   <MenuItem value={ROLES.AGENT}>Real Estate Agent</MenuItem>
                   <MenuItem value={ROLES.COMMISSION_MANAGER}>Commission Manager</MenuItem>
                   <MenuItem value={ROLES.BUYER}>Buyer</MenuItem>
@@ -1006,82 +927,90 @@ export function UserListPage() {
               </FormControl>
             </Box>
 
-            <Box>
-              <Typography className="!mb-1.5 !text-sm !font-semibold !text-slate-700">
-                {modalMode === 'edit' ? 'New Password (optional)' : (
-                  <>
-                    Password <span className="text-rose-500">*</span>
-                  </>
-                )}
-              </Typography>
-              <TextField
-                fullWidth
-                type={showPassword ? 'text' : 'password'}
-                placeholder={modalMode === 'edit' ? 'Leave blank to keep existing' : 'Minimum 6 characters'}
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value)
-                  if (passwordError) setPasswordError(null)
-                  if (errorMessage) setErrorMessage(null)
-                }}
-                error={Boolean(passwordError)}
-                helperText={passwordError}
-                size="small"
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <KeyOutlined className="text-slate-400" fontSize="small" />
-                      </InputAdornment>
-                    ),
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton onClick={() => setShowPassword(!showPassword)} size="small">
-                          {showPassword
-                            ? <VisibilityOff fontSize="small" className="text-slate-400" />
-                            : <Visibility fontSize="small" className="text-slate-400" />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                    className: 'rounded-xl',
-                  },
-                }}
-              />
-            </Box>
+            {role !== ROLES.BUYER ? (
+              <>
+                <Box>
+                  <Typography className="!mb-1.5 !text-sm !font-semibold !text-slate-700">
+                    {modalMode === 'edit' ? 'New Password (optional)' : (
+                      <>
+                        Password <span className="text-rose-500">*</span>
+                      </>
+                    )}
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder={modalMode === 'edit' ? 'Leave blank to keep existing' : 'Minimum 8 characters'}
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value)
+                      if (passwordError) setPasswordError(null)
+                      if (errorMessage) setErrorMessage(null)
+                    }}
+                    error={Boolean(passwordError)}
+                    helperText={passwordError}
+                    size="small"
+                    slotProps={{
+                      input: {
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <KeyOutlined className="text-slate-400" fontSize="small" />
+                          </InputAdornment>
+                        ),
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton onClick={() => setShowPassword(!showPassword)} size="small">
+                              {showPassword
+                                ? <VisibilityOff fontSize="small" className="text-slate-400" />
+                                : <Visibility fontSize="small" className="text-slate-400" />}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                        className: 'rounded-xl',
+                      },
+                    }}
+                  />
+                </Box>
 
-            <Box>
-              <Typography className="!mb-1.5 !text-sm !font-semibold !text-slate-700">
-                {modalMode === 'edit' ? 'Confirm New Password' : (
-                  <>
-                    Confirm Password <span className="text-rose-500">*</span>
-                  </>
-                )}
-              </Typography>
-              <TextField
-                fullWidth
-                type={showPassword ? 'text' : 'password'}
-                placeholder="Re-enter password"
-                value={confirmPassword}
-                onChange={(e) => {
-                  setConfirmPassword(e.target.value)
-                  if (confirmPasswordError) setConfirmPasswordError(null)
-                  if (errorMessage) setErrorMessage(null)
-                }}
-                error={Boolean(confirmPasswordError)}
-                helperText={confirmPasswordError}
-                size="small"
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <KeyOutlined className="text-slate-400" fontSize="small" />
-                      </InputAdornment>
-                    ),
-                    className: 'rounded-xl',
-                  },
-                }}
-              />
-            </Box>
+                <Box>
+                  <Typography className="!mb-1.5 !text-sm !font-semibold !text-slate-700">
+                    {modalMode === 'edit' ? 'Confirm New Password' : (
+                      <>
+                        Confirm Password <span className="text-rose-500">*</span>
+                      </>
+                    )}
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    type={showPassword ? 'text' : 'password'}
+                    placeholder="Re-enter password (minimum 8 characters)"
+                    value={confirmPassword}
+                    onChange={(e) => {
+                      setConfirmPassword(e.target.value)
+                      if (confirmPasswordError) setConfirmPasswordError(null)
+                      if (errorMessage) setErrorMessage(null)
+                    }}
+                    error={Boolean(confirmPasswordError)}
+                    helperText={confirmPasswordError}
+                    size="small"
+                    slotProps={{
+                      input: {
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <KeyOutlined className="text-slate-400" fontSize="small" />
+                          </InputAdornment>
+                        ),
+                        className: 'rounded-xl',
+                      },
+                    }}
+                  />
+                </Box>
+              </>
+            ) : (
+              <Alert severity="info" className="!rounded-xl !text-xs">
+                Buyer accounts do not require portal login credentials.
+              </Alert>
+            )}
 
             <Box className="flex items-center justify-end gap-3 border-t border-slate-100 pt-4">
               <Button onClick={closeModal} className="!normal-case !text-slate-600">
