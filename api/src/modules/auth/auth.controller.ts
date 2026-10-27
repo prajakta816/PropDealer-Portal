@@ -36,6 +36,13 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
       typeof error.statusCode === 'number'
     ) {
       const statusCode = error.statusCode;
+      if (statusCode === 401) {
+        res.clearCookie('accessToken', {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        });
+      }
 
       return res.status(statusCode).json({
         success: false,
