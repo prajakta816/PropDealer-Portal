@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
+import { env } from "../../config/env.js";
 import {findUserByEmail} from './auth.repository.js'
 import { loginInput } from "./auth.validation.js";
 
@@ -13,11 +14,6 @@ const createAuthError = (message:string, statusCode:number)=>{
 }
 
 export const loginService = async(loginData : loginInput)=>{
-    const jwtSecret = process.env.JWT_SECRET;
-    if(!jwtSecret){
-        throw createAuthError("Authentication is failed ", 500)
-    }
-
     const user = await findUserByEmail(loginData.email)
 
     if(!user){
@@ -30,7 +26,7 @@ export const loginService = async(loginData : loginInput)=>{
         throw createAuthError("Invalid email or passoword",401);
     }
 
-    const token = jwt.sign({role:user.role}, jwtSecret ,{subject:user.id , expiresIn:JWT_EXPIRES_IN});
+    const token = jwt.sign({role:user.role}, env.JWT_SECRET ,{subject:user.id , expiresIn:JWT_EXPIRES_IN});
 
     return{
         token,
