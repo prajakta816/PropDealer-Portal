@@ -1,4 +1,5 @@
 import axios from 'axios';
+import apiClient from './apiClient';
 import { ROLES, type UserRole } from '../constants/roles';
 
 export interface CreateUserRequest {
@@ -36,7 +37,7 @@ export interface userResponse{
 
 export async function getAllUserApi():Promise<CreatedUser[]>{
   try {
-    const response = await axios.get<userResponse>('api/users');
+    const response = await apiClient.get<userResponse>('/users');
     const result = response.data
     if(!result.success || !Array.isArray(result.data))
     {
@@ -79,7 +80,7 @@ export async function createUserApi( userData: CreateUserRequest, ): Promise<Cre
         };
 
     const response = await axios.post<CreateUserResponse>(
-      '/api/users',
+      '/users',
       requestPayload,
     );
 
