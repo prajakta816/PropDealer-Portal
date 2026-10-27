@@ -24,6 +24,47 @@ const auditUserSelect = {
   email: true,
 } as const;
 
+export const getAllUsers = async () => {
+  const [users, buyers] = await Promise.all([
+    prisma.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        createdAt: true,
+        createdById: true,
+        updatedAt: true,
+        updatedById: true,
+      },
+    }),
+
+    prisma.buyer.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        createdAt: true,
+        createdById: true,
+        updatedAt: true,
+        updatedById: true,
+      },
+    }),
+  ]);
+
+  const allUsers = [
+    ...users,
+    ...buyers.map((buyer) => ({
+      ...buyer,
+      role: 'Buyer' as const,
+    })),
+  ];
+
+  return allUsers.sort(
+    (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
+  );
+};
+
 export const createUser = (userData: CreateUserRepositoryInput) => {
   return prisma.user.create({
     data: {

@@ -10,7 +10,7 @@ import {
   type User,
   type StoredUser,
 } from '../context'
-import { createUserApi } from '../api/usersApi'
+import { createUserApi , getAllUserApi} from '../api/usersApi'
 import { ROLES, type UserRole } from '../constants/roles'
 
 const ROLE_COLORS: Record<UserRole, 'primary' | 'success' | 'secondary' | 'warning'> = {
@@ -54,15 +54,60 @@ export function UserListPage() {
   const [users, setUsers] = useState<User[]>([])
   const [isLoadingUsers, setIsLoadingUsers] = useState(true)
 
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [role, setRole] = useState<UserRole>(ROLES.AGENT)
+  const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [toastMessage, setToastMessage] = useState<string | null>(null)
+  const [toastSeverity, setToastSeverity] = useState<'success' | 'error'>('success')
+
+
   useEffect(() => {
-    try {
-      setUsers(loadUsers())
-    } catch (err) {
-      console.error('Failed to load users:', err)
+    // try {
+    //   setUsers(loadUsers())
+    // } catch (err) {
+    //   console.error('Failed to load users:', err)
+    // } finally {
+    //   setIsLoadingUsers(false)
+    // }
+
+    let isMounted = true 
+
+      const fetchUsers= async()=>{
+       setIsLoadingUsers(true);
+
+       try{
+       const fechedUsers = await getAllUserApi();
+       if(isMounted){
+        setUsers(fechedUsers)
+       }
+       }catch (error: unknown) {
+      if (isMounted) {
+        setErrorMessage(
+          error instanceof Error
+            ? error.message
+            : 'Failed to load users.',
+        );
+      }
     } finally {
-      setIsLoadingUsers(false)
+      if (isMounted) {
+        setIsLoadingUsers(false);
+      }
+    }
+    }
+
+    void fetchUsers();
+
+    return()=>{
+      isMounted = false;
     }
   }, [])
+
+
   const [modalMode, setModalMode] = useState<ModalMode>(null)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
@@ -76,17 +121,7 @@ export function UserListPage() {
   const [sortField, setSortField] = useState<SortField>('name')
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
 
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [role, setRole] = useState<UserRole>(ROLES.AGENT)
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
-  const [toastMessage, setToastMessage] = useState<string | null>(null)
-  const [toastSeverity, setToastSeverity] = useState<'success' | 'error'>('success')
-
+  
   // Field-specific validation error states
   const [nameError, setNameError] = useState<string | null>(null)
   const [emailError, setEmailError] = useState<string | null>(null)
@@ -288,39 +323,24 @@ export function UserListPage() {
           password: role !== ROLES.BUYER ? password : '',
           role,
         })
+  
+    setUsers((currentUsers) => [...currentUsers, createdUser]);
 
-        setUsers((currentUsers) => [
-          ...currentUsers,
-          createdUser,
-        ])
+    try {
+      const refreshedUsers = await getAllUserApi();
+      setUsers(refreshedUsers);
+    } catch (refreshError) {
+      console.error('User created, but refreshing the table failed:', refreshError);
+    }
 
-        try {
-          const rawData = localStorage.getItem(USERS_STORAGE_KEY)
-          const existingUsers: StoredUser[] = rawData ? JSON.parse(rawData) : []
-          const updatedUsers: StoredUser[] = [
-            ...existingUsers,
-            {
-              id: createdUser.id,
-              name: createdUser.name,
-              email: createdUser.email,
-              role: createdUser.role,
-              createdAt: createdUser.createdAt,
-              passwordHash: password ? await hashPassword(password) : '',
-            },
-          ]
-          localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(updatedUsers))
-        } catch (storageErr) {
-          console.error('Failed to update local storage:', storageErr)
-        }
+    setToastSeverity('success');
+    setToastMessage(
+      `${createdUser.name} (${createdUser.role}) has been created successfully.`,
+    );
 
-        setToastSeverity('success')
-        setToastMessage(
-          `${createdUser.name} (${createdUser.role}) has been created successfully.`
-        )
-
-        closeModal()
-        return
-      }
+    closeModal();
+    return;
+}
 
       if (modalMode === 'edit' && selectedUser) {
         const rawData = localStorage.getItem(USERS_STORAGE_KEY)
@@ -911,7 +931,7 @@ export function UserListPage() {
                   {isCurrentUserAdmin && (
                     <MenuItem value={ROLES.ADMIN}>
                       <Box className="flex items-center gap-2">
-                        <span>Administrator (Admin)</span>
+                        <span>Administrator </span>
                         <Chip
                           label="Admin Only"
                           size="small"

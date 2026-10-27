@@ -8,6 +8,7 @@ import {
 import {
   createUser,
   createBuyer,
+  getAllUsers
 } from './users.repository.js';
 import type { CreateUserInput } from './users.validation.js';
 
@@ -17,6 +18,9 @@ const CREATABLE_ROLES: UserRole[] = [
   ROLES.COMMISSION_MANAGER,
 ];
 
+export const getAllUsersService = async()=>{
+  return getAllUsers();
+}
 export const createUserService = async (
   userData: CreateUserInput,
 ) => {
