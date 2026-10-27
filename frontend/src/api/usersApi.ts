@@ -42,9 +42,7 @@ export async function getAllUserApi():Promise<CreatedUser[]>{
     {
       throw new Error(result.message || "failed to get the users");
     }
-
     return result.data;
-
   } catch (error : unknown) {
     if (axios.isAxiosError<userResponse>(error)) {
       throw new Error(
@@ -63,9 +61,7 @@ export async function getAllUserApi():Promise<CreatedUser[]>{
   }
 }
 
-export async function createUserApi(
-  userData: CreateUserRequest,
-): Promise<CreatedUser> {
+export async function createUserApi( userData: CreateUserRequest, ): Promise<CreatedUser> {
   try {
     const isBuyer = userData.role === ROLES.BUYER;
     const requestPayload = isBuyer

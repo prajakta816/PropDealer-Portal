@@ -3,15 +3,11 @@ import { Alert, Avatar, Box, Button, Chip, CircularProgress, Container, Dialog, 
 import { Add, ArrowBack, BadgeOutlined, Close, DeleteOutlined, EditOutlined, EmailOutlined, FilterList, KeyOutlined, Person, PersonOutlined, RestartAlt, Search, Visibility, VisibilityOff, VisibilityOutlined, } from '@mui/icons-material'
 import { DataGrid, type GridColDef, type GridRenderCellParams } from '@mui/x-data-grid'
 import { Link as RouterLink } from 'react-router-dom'
-import {
-  USERS_STORAGE_KEY,
-  hashPassword,
-  useAuth,
-  type User,
-  type StoredUser,
-} from '../context'
-import { createUserApi , getAllUserApi} from '../api/usersApi'
+
+import { USERS_STORAGE_KEY, hashPassword, useAuth, type User, type StoredUser, } from '../context'
 import { ROLES, type UserRole } from '../constants/roles'
+
+import { createUserApi , getAllUserApi} from '../api/usersApi'
 
 const ROLE_COLORS: Record<UserRole, 'primary' | 'success' | 'secondary' | 'warning'> = {
   [ROLES.ADMIN]: 'primary',
@@ -40,11 +36,7 @@ const ROLE_GRADIENTS: Record<UserRole, string> = {
 }
 
 type ModalMode = 'create' | 'edit' | 'view' | null//impossible to open more than one
-
-// Fields the user can sort by
 type SortField = 'name' | 'email' | 'role'
-
-// Direction in which the selected field will be sorted
 type SortDirection = 'asc' | 'desc'
 
 export function UserListPage() {
@@ -67,44 +59,28 @@ export function UserListPage() {
 
 
   useEffect(() => {
-    // try {
-    //   setUsers(loadUsers())
-    // } catch (err) {
-    //   console.error('Failed to load users:', err)
-    // } finally {
-    //   setIsLoadingUsers(false)
-    // }
-
     let isMounted = true 
 
       const fetchUsers= async()=>{
        setIsLoadingUsers(true);
 
-       try{
-       const fechedUsers = await getAllUserApi();
-       if(isMounted){
-        setUsers(fechedUsers)
-       }
-       }catch (error: unknown) {
-      if (isMounted) {
-        setErrorMessage(
-          error instanceof Error
-            ? error.message
-            : 'Failed to load users.',
-        );
+      try{
+         const fechedUsers = await getAllUserApi();
+         if(isMounted){
+            setUsers(fechedUsers)
+          }
+        }catch (error: unknown) {
+         if (isMounted) {
+          setErrorMessage( error instanceof Error ? error.message : 'Failed to load users.', );
+         }
+        } finally {
+          if (isMounted) {
+            setIsLoadingUsers(false);
+          }
+        }
       }
-    } finally {
-      if (isMounted) {
-        setIsLoadingUsers(false);
-      }
-    }
-    }
-
     void fetchUsers();
-
-    return()=>{
-      isMounted = false;
-    }
+    return()=>{ isMounted = false; }
   }, [])
 
 
@@ -128,7 +104,7 @@ export function UserListPage() {
   const [passwordError, setPasswordError] = useState<string | null>(null)
   const [confirmPasswordError, setConfirmPasswordError] = useState<string | null>(null)
 
-  // STEP 1: Filter users by search query (name/email) and role filter
+  // Filter users by search query (name/email) and role filter
   const query = searchQuery.trim().toLowerCase()
 
   const filteredUsers = users.filter((user) => {
@@ -143,7 +119,7 @@ export function UserListPage() {
     return matchesSearch && matchesRole
   })
 
-  // STEP 2: Sort a copy of the filtered results
+  // Sort a copy of the filtered results
   const sortedUsers = [...filteredUsers].sort((a, b) => {
     let result = 0
 
@@ -324,23 +300,21 @@ export function UserListPage() {
           role,
         })
   
-    setUsers((currentUsers) => [...currentUsers, createdUser]);
+        setUsers((currentUsers) => [...currentUsers, createdUser]);
 
-    try {
-      const refreshedUsers = await getAllUserApi();
-      setUsers(refreshedUsers);
-    } catch (refreshError) {
-      console.error('User created, but refreshing the table failed:', refreshError);
-    }
+      try {
+        const refreshedUsers = await getAllUserApi();
+        setUsers(refreshedUsers);
+      } catch (refreshError) {
+        console.error('User created, but refreshing the table failed:', refreshError);
+      }
 
-    setToastSeverity('success');
-    setToastMessage(
-      `${createdUser.name} (${createdUser.role}) has been created successfully.`,
-    );
+      setToastSeverity('success');
+      setToastMessage( `${createdUser.name} (${createdUser.role}) has been created successfully.`, );
 
-    closeModal();
-    return;
-}
+      closeModal();
+      return;
+      }
 
       if (modalMode === 'edit' && selectedUser) {
         const rawData = localStorage.getItem(USERS_STORAGE_KEY)
