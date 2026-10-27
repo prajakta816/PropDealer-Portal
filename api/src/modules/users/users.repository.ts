@@ -24,24 +24,6 @@ const auditUserSelect = {
   email: true,
 } as const;
 
-// export const getAllUsers = async()=>{
-//   return prisma.user.findMany({
-//     select:{
-//       id:true,
-//       name:true,
-//       email:true,
-//       role:true,
-//       createdAt:true,
-//       createdById:true,
-//       updatedAt:true,
-//       updatedById:true
-//     },
-//     orderBy:{
-//       createdAt:"desc"
-//     }
-//   })
-// }
-
 export const getAllUsers = async () => {
   const [users, buyers] = await Promise.all([
     prisma.user.findMany({
