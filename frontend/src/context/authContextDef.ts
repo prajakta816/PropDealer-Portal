@@ -1,9 +1,8 @@
 import { createContext } from 'react'
 import type { UserRole } from '../constants/roles'
-import type { User } from './authConstants'
-
+import { type AuthUser } from '../api/authApi'
 export interface AuthContextType {
-  user: User | null
+  user: AuthUser | null
   isAuthenticated: boolean
   login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>
   logout: () => void

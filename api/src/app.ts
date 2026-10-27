@@ -1,11 +1,15 @@
 
 import express from 'express';
+import cookieParser from 'cookie-parser';
+
+import authRouter from './modules/auth/auth.routes.js';
 import usersRouter from './modules/users/users.routes.js';
 import { prisma } from '../prisma/prisma.js';
 
 const app = express();
 
 app.use(express.json());
+app.use(cookieParser());
 
 // Root endpoint
 app.get('/', (req, res) => {
@@ -45,6 +49,9 @@ app.get('/api/health/db', async (req, res) => {
 
 // User routes
 app.use('/api/users', usersRouter);
+
+//auth routes
+app.use('/api/auth',authRouter);
 
 export default app;
 
