@@ -10,6 +10,8 @@ export interface AuthUser{
 
 export interface loginResponse{
     message:string,
+    token:string,
+    tokenType:'Bearer',
     expiresIn:string,
     data:AuthUser
 }

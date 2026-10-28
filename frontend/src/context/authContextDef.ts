@@ -3,6 +3,7 @@ import type { UserRole } from '../constants/roles'
 import { type AuthUser } from '../api/authApi'
 export interface AuthContextType {
   user: AuthUser | null
+  token:string | null
   isAuthenticated: boolean
   isLoading: boolean
   login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>
