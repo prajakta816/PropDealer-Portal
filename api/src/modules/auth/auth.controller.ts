@@ -4,7 +4,7 @@ import {
   type NextFunction,
 } from "express";
 
-import { loginService } from "./auth.service.js";
+import { loginService,getCurrentUserService } from "./auth.service.js";
 import { loginInput } from "./auth.validation.js";
 
 const COOKIE_MAX_AGE = 86400000;
@@ -55,5 +55,29 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
     }
 
     return next(error);
+  }
+}
+
+export const getCurrentUser = async(req:Request, res: Response,next:NextFunction)=>{
+  try {
+    const token = req.cookies?.accessToken;
+
+    if(!token){
+      res.status(401).json({
+        status:'error',
+        message:'not authenticated'
+      });
+      return;
+    }
+
+    const user = await getCurrentUserService(token);
+    return res.status(200).json({
+      status:'success',
+      data:{
+        user,
+      }
+    });
+  } catch (error) {
+    next(error);
   }
 }

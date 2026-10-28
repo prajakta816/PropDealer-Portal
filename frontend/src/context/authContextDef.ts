@@ -4,6 +4,7 @@ import { type AuthUser } from '../api/authApi'
 export interface AuthContextType {
   user: AuthUser | null
   isAuthenticated: boolean
+  isLoading: boolean
   login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>
   logout: () => void
   hasRole: (allowedRoles: UserRole[]) => boolean
