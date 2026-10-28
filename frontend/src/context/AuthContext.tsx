@@ -51,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try{
         const response = await loginApi(email,password)
 
-        localStorage.setItem('aceesToken',response.token);
+        localStorage.setItem('accessToken',response.token);
         setToken(response.token);
 
         const sessionUser : AuthUser = {
