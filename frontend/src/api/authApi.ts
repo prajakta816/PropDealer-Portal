@@ -18,3 +18,8 @@ export const loginApi = async(email:string, password:string):Promise<loginRespon
     const response = await apiClient.post<loginResponse>('/auth/login',{email,password},);
     return response.data;
 }
+
+export const getCurrentUserApi = async()=>{
+    const response = await apiClient.get<{status:string,data:{user:AuthUser}}>('/auth/me');
+    return response.data;
+}

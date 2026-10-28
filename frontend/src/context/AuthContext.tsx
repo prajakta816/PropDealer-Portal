@@ -1,13 +1,28 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 
 import type { UserRole } from '../constants/roles'
 
 import { AuthContext } from './authContextDef'
-import {loginApi, type AuthUser} from '../api/authApi'
+import {loginApi,getCurrentUserApi, type AuthUser} from '../api/authApi'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
 
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(()=>{
+    const getLoggedInUser = async()=>{
+        try{
+           const response = await getCurrentUserApi();
+           setUser(response.data.user);
+        }catch{
+            setUser(null);
+        }finally{
+          setIsLoading(false);
+        }
+    } ;
+    getLoggedInUser();
+  },[])
 
    const login = async(email:string, password:string):Promise<{success:boolean;  message?:string}>=>{
       try{
@@ -62,6 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         user,
         isAuthenticated: Boolean(user),//its used to chekc whether the user is logged in or not. If user is not null, it means the user is authenticated, and the value will be true. If user is null, it means no user is logged in, and the value will be false.
+        isLoading,
         login,
         logout,
         hasRole,

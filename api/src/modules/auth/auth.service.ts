@@ -2,7 +2,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 import { env } from "../../config/env.js";
-import {findUserByEmail} from './auth.repository.js'
+import {findUserByEmail, findUserById} from './auth.repository.js'
 import { loginInput } from "./auth.validation.js";
 
 const JWT_EXPIRES_IN = '1d';
@@ -38,4 +38,34 @@ export const loginService = async(loginData : loginInput)=>{
             role:user.role
         },
     };   
+}
+
+export const getCurrentUserService =async(token:string)=>{
+    try{
+        const decoded = jwt.verify(token , env.JWT_SECRET);
+        if(typeof decoded === 'string' || !decoded.sub){
+            throw createAuthError('inalid or expired session', 401);
+        }
+
+        const user = await findUserById(decoded.sub);
+        if(!user){
+            throw createAuthError('invalid or expired session', 401);
+        }
+
+        return{
+            name:user.name,
+            email:user.email,
+            role:user.role
+        }
+    }catch (error) {
+    if (
+      error instanceof Error &&
+      'statusCode' in error &&
+      typeof error.statusCode === 'number'
+    ) {
+      throw error;
+    }
+
+    throw createAuthError('Invalid or expired session.', 401);
+  }
 }
