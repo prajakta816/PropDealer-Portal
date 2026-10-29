@@ -23,7 +23,7 @@ declare global {
 export const authenticateToken = async(req: Request, res:Response, next:NextFunction)=>{
     try{
         const authHeader = req.headers.authorization;
-        const token = authHeader?.startsWith('Bearer') ? authHeader.slice('Bearer'.length) : undefined;
+        const token = authHeader?.startsWith('Bearer') ? authHeader.slice('Bearer '.length) : undefined;
         if(!token){
             return res.status(401).json({success:false , message :"Authentication token is required"});
         }
@@ -39,9 +39,9 @@ export const authenticateToken = async(req: Request, res:Response, next:NextFunc
         }
         
         req.user = {
-            id   : decoded.id,
-            name : decoded.name,
-            email: decoded.email,
+            id   : decoded.sub,
+            name : user.name,
+            email: user.email,
             role : decoded.role
         }  
 
