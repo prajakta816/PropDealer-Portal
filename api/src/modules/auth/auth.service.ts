@@ -10,6 +10,9 @@ import { StatusCodes } from 'http-status-codes';
 
 const JWT_EXPIRES_IN = '1d';
 
+
+const DUMMY_HASH = '$2b$10$abcdefghijklmnopqrstuuABCDEFGHIJKLMNOPQRSTUVWXYZ01234';
+
 const createAuthError = (message:string, statusCode:number)=>{
     const error = new Error(message) as Error & {statusCode : number ;};
     error.statusCode = statusCode;
@@ -17,15 +20,12 @@ const createAuthError = (message:string, statusCode:number)=>{
 }
 
 export const loginService = async(loginData : loginInput)=>{
-    const user = await findUserByEmail(loginData.email)
+    const user = await findUserByEmail(loginData.email);
 
-    if(!user){
-        throw createAuthError(MESSAGES.ERROR.INVALID_CREDENTIALS, StatusCodes.UNAUTHORIZED);
-    }
+    const hashToCompare = user?.passwordHash ?? DUMMY_HASH;
+    const isPasswordValid = await bcrypt.compare(loginData.password, hashToCompare);
 
-    const isPaswordValid = await bcrypt.compare(loginData.password , user.passwordHash);
-
-    if(!isPaswordValid){
+    if(!user || !isPasswordValid){
         throw createAuthError(MESSAGES.ERROR.INVALID_CREDENTIALS, StatusCodes.UNAUTHORIZED);
     }
 
