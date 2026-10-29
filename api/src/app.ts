@@ -7,6 +7,7 @@ import usersRouter from './modules/users/users.routes.js';
 import { prisma } from '../prisma/prisma.js';
 
 import { MESSAGES } from './constants/messages.js';
+import { StatusCodes } from 'http-status-codes';
 
 const app = express();
 
@@ -15,7 +16,7 @@ app.use(cookieParser());
 
 // Root endpoint
 app.get('/', (req, res) => {
-  res.status(200).json({
+  res.status(StatusCodes.OK).json({
     status: 'success',
     message: 'hello world',
   });
@@ -23,7 +24,7 @@ app.get('/', (req, res) => {
 
 // API health check
 app.get('/api/health', (req, res) => {
-  res.status(200).json({
+  res.status(StatusCodes.OK).json({
     status: 'success',
     message: MESSAGES.SUCCESS.SERVER_RUNNING,
   });
@@ -34,7 +35,7 @@ app.get('/api/health/db', async (req, res) => {
   try {
     const users = await prisma.$queryRaw`SELECT 1 AS connected`;
 
-    res.status(200).json({
+    res.status(StatusCodes.OK).json({
       status: 'success',
       message: 'Database connectivity successful',
       data: users,
@@ -42,7 +43,7 @@ app.get('/api/health/db', async (req, res) => {
   } catch (error) {
     console.error('Database connectivity failed:', error);
 
-    res.status(503).json({
+    res.status(StatusCodes.SERVICE_UNAVAILABLE).json({
       status: 'error',
       message: 'Database connectivity failed',
     });

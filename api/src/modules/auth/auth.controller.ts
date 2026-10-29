@@ -8,7 +8,7 @@ import { loginService, getCurrentUserService } from "./auth.service.js";
 import { loginInput } from "./auth.validation.js";
 
 import { MESSAGES } from '../../constants/messages.js';
-
+import { StatusCodes } from "http-status-codes";
 
 // const COOKIE_MAX_AGE = 86400000;
 
@@ -26,8 +26,8 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
     //   path: '/'
     // });
 
-    return res.status(200).json({
-      statusCode: 200,
+    return res.status(StatusCodes.OK).json({
+      statusCode: StatusCodes.OK,
       token: result.token,
       tokenType: result.tokenType,
       message: MESSAGES.SUCCESS.LOGIN_SUCCESS,
@@ -41,20 +41,20 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
       typeof error.statusCode === 'number'
     ) {
       const statusCode = error.statusCode;
-      if (statusCode === 401) {
-        //code of clear cookiw after the error
-        // res.clearCookie('accessToken', {
-        // httpOnly: true,
-        // sameSite: 'lax',
-        // path: '/',
-        // });
-      }
+      //code of clear cookiw after the error
+      // if (statusCode ===StatusCodes.UNAUTHORIZED) {     
+      //    res.clearCookie('accessToken', {
+      //    httpOnly: true,
+      //    sameSite: 'lax',
+      //    path: '/',
+      //    });
+      // }
 
       return res.status(statusCode).json({
         success: false,
         statusCode,
         message:
-          statusCode === 401
+          statusCode === StatusCodes.UNAUTHORIZED
             ? MESSAGES.ERROR.INVALID_CREDENTIALS
             : MESSAGES.ERROR.AUTH_CONFIG_ERROR,
       });
@@ -73,7 +73,7 @@ export const getCurrentUser = async (req: Request, res: Response, next: NextFunc
       : undefined;
 
     if (!token) {
-      res.status(401).json({
+      res.status(StatusCodes.UNAUTHORIZED).json({
         status: 'error',
         message: MESSAGES.ERROR.NOT_AUTHENTICATED
       });
@@ -81,7 +81,7 @@ export const getCurrentUser = async (req: Request, res: Response, next: NextFunc
     }
 
     const user = await getCurrentUserService(token);
-    return res.status(200).json({
+    return res.status(StatusCodes.OK).json({
       status: 'success',
       data: {
         user,

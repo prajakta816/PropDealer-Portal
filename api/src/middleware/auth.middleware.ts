@@ -6,6 +6,7 @@ import { findUserById } from "../modules/auth/auth.repository.js";
 
 import { UserRole } from "../constants/roles.js";
 import { MESSAGES } from "../constants/messages.js";
+import { StatusCodes } from 'http-status-codes';
 
 export interface AuthenticatedUser {
     id: string,
@@ -29,17 +30,17 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
             ? authHeader.split(' ')[1]
             : undefined;
         if (!token) {
-            return res.status(401).json({ success: false, message: MESSAGES.ERROR.AUTHENTICATION_TOKEN_REQUIRED });
+            return res.status(StatusCodes.UNAUTHORIZED).json({ success: false, message: MESSAGES.ERROR.AUTHENTICATION_TOKEN_REQUIRED });
         }
 
         const decoded = jwt.verify(token, env.JWT_SECRET);
         if (typeof decoded === 'string' || !decoded.sub) {
-            return res.status(401).json({ success: false, message: MESSAGES.ERROR.INVALID_AUTHENTICATION_TOKEN });
+            return res.status(StatusCodes.UNAUTHORIZED).json({ success: false, message: MESSAGES.ERROR.INVALID_AUTHENTICATION_TOKEN });
         }
 
         const user = await findUserById(decoded.sub);
         if (!user) {
-            return res.status(401).json({ success: false, message: MESSAGES.ERROR.USER_NOT_FOUND });
+            return res.status(StatusCodes.UNAUTHORIZED).json({ success: false, message: MESSAGES.ERROR.USER_NOT_FOUND });
         }
 
         req.user = {
@@ -51,18 +52,18 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
 
         return next();
     } catch {
-        return res.status(401).json({ success: false, message: MESSAGES.ERROR.INVALID_OR_EXPIRED_TOKEN });
+        return res.status(StatusCodes.UNAUTHORIZED).json({ success: false, message: MESSAGES.ERROR.INVALID_OR_EXPIRED_TOKEN });
     }
 }
 
 export const authorizeRole = (...allowedRoles: UserRole[]) => {
     return (req: Request, res: Response, next: NextFunction) => {
         if (!req.user) {
-            return res.status(401).json({ success: false, message: MESSAGES.ERROR.AUTHENTICATION_REQUIRED })
+            return res.status(StatusCodes.UNAUTHORIZED).json({ success: false, message: MESSAGES.ERROR.AUTHENTICATION_REQUIRED })
         }
 
         if (!allowedRoles.includes(req.user.role)) {
-            return res.status(403).json({ success: false, message: MESSAGES.ERROR.UNAUTHORIZED });
+            return res.status(StatusCodes.FORBIDDEN).json({ success: false, message: MESSAGES.ERROR.UNAUTHORIZED });
         }
 
         return next();
