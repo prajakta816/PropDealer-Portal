@@ -5,12 +5,13 @@ import { createUserService, getAllUsersService } from './users.service.js';
 import type { CreateUserInput } from './users.validation.js';
 
 import { MESSAGES } from '../../constants/messages.js';
+import { StatusCodes } from 'http-status-codes';
 
 export const getAllUsers = async (req: Request, res: Response, next: NextFunction,) => {
   try {
     const users = await getAllUsersService();
 
-    return res.status(200).json({
+    return res.status(StatusCodes.OK).json({
       success: true,
       message: MESSAGES.SUCCESS.USERS_RETRIEVED,
       data: users
@@ -32,7 +33,7 @@ export const createUser = async (
 
     const isBuyer = input.entityType === 'Buyer';
 
-    return res.status(201).json({
+    return res.status(StatusCodes.CREATED).json({
       success: true,
       message: isBuyer
         ? MESSAGES.SUCCESS.BUYER_CREATED
@@ -44,7 +45,7 @@ export const createUser = async (
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === 'P2002'
     ) {
-      return res.status(409).json({
+      return res.status(StatusCodes.CONFLICT).json({
         success: false,
         message: MESSAGES.ERROR.EMAIL_ALREADY_EXISTS,
       });
