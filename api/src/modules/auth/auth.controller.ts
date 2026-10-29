@@ -4,8 +4,11 @@ import {
   type NextFunction,
 } from "express";
 
-import { loginService,getCurrentUserService } from "./auth.service.js";
+import { loginService, getCurrentUserService } from "./auth.service.js";
 import { loginInput } from "./auth.validation.js";
+
+import { MESSAGES } from '../../constants/messages.js';
+
 
 // const COOKIE_MAX_AGE = 86400000;
 
@@ -25,9 +28,9 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 
     return res.status(200).json({
       statusCode: 200,
-      token:result.token,
+      token: result.token,
       tokenType: result.tokenType,
-      message: "login successfull",
+      message: MESSAGES.SUCCESS.LOGIN_SUCCESS,
       expiresIn: result.expiresIn,
       data: result.data
     });
@@ -52,8 +55,8 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
         statusCode,
         message:
           statusCode === 401
-            ? 'Invalid email or password.'
-            : 'Authentication is not configured correctly.',
+            ? MESSAGES.ERROR.INVALID_CREDENTIALS
+            : MESSAGES.ERROR.AUTH_CONFIG_ERROR,
       });
     }
 
@@ -61,7 +64,7 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
   }
 }
 
-export const getCurrentUser = async(req:Request, res: Response,next:NextFunction)=>{
+export const getCurrentUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
     // const token = req.cookies?.accessToken;
     const authHeader = req.headers.authorization;
@@ -69,18 +72,18 @@ export const getCurrentUser = async(req:Request, res: Response,next:NextFunction
       ? authHeader.split(' ')[1]
       : undefined;
 
-    if(!token){
+    if (!token) {
       res.status(401).json({
-        status:'error',
-        message:'not authenticated'
+        status: 'error',
+        message: MESSAGES.ERROR.NOT_AUTHENTICATED
       });
       return;
     }
 
     const user = await getCurrentUserService(token);
     return res.status(200).json({
-      status:'success',
-      data:{
+      status: 'success',
+      data: {
         user,
       }
     });

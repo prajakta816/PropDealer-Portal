@@ -3,7 +3,9 @@ import type { Request, Response, NextFunction } from "express";
 import jwt from 'jsonwebtoken';
 import { env } from "../config/env.js";
 import { findUserById } from "../modules/auth/auth.repository.js";
+
 import { UserRole } from "../constants/roles.js";
+import { MESSAGES } from "../constants/messages.js";
 
 export interface AuthenticatedUser {
     id: string,
@@ -27,17 +29,17 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
             ? authHeader.split(' ')[1]
             : undefined;
         if (!token) {
-            return res.status(401).json({ success: false, message: "Authentication token is required" });
+            return res.status(401).json({ success: false, message: MESSAGES.ERROR.AUTHENTICATION_TOKEN_REQUIRED });
         }
 
         const decoded = jwt.verify(token, env.JWT_SECRET);
         if (typeof decoded === 'string' || !decoded.sub) {
-            return res.status(401).json({ success: false, message: "Invalid authentication token" });
+            return res.status(401).json({ success: false, message: MESSAGES.ERROR.INVALID_AUTHENTICATION_TOKEN });
         }
 
         const user = await findUserById(decoded.sub);
         if (!user) {
-            return res.status(401).json({ success: false, message: "User associated with this token was not found." });
+            return res.status(401).json({ success: false, message: MESSAGES.ERROR.USER_NOT_FOUND });
         }
 
         req.user = {
@@ -49,18 +51,18 @@ export const authenticateToken = async (req: Request, res: Response, next: NextF
 
         return next();
     } catch {
-        return res.status(401).json({ success: false, message: "Invalid or expired authentication token." });
+        return res.status(401).json({ success: false, message: MESSAGES.ERROR.INVALID_OR_EXPIRED_TOKEN });
     }
 }
 
 export const authorizeRole = (...allowedRoles: UserRole[]) => {
     return (req: Request, res: Response, next: NextFunction) => {
         if (!req.user) {
-            return res.status(401).json({ success: false, message: "Authentication required." })
+            return res.status(401).json({ success: false, message: MESSAGES.ERROR.AUTHENTICATION_REQUIRED })
         }
 
         if (!allowedRoles.includes(req.user.role)) {
-            return res.status(403).json({ success: false, message: "You do not have permission to access this resource." });
+            return res.status(403).json({ success: false, message: MESSAGES.ERROR.UNAUTHORIZED });
         }
 
         return next();

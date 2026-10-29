@@ -1,4 +1,6 @@
 
+import { MESSAGES } from '../constants/messages.js';
+
 export const validate = (schema) => {
   return (req, res, next) => {
     const result = schema.safeParse(req.body);
@@ -6,7 +8,7 @@ export const validate = (schema) => {
     if (!result.success) {
       return res.status(400).json({
         success: false,
-        message: 'Validation failed',
+        message: MESSAGES.ERROR.VALIDATION_FAILED,
         errors: result.error.issues.map((issue) => ({
           field: issue.path.join('.'),
           message: issue.message,
