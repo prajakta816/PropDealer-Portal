@@ -3,6 +3,7 @@ import { type Request, type Response, type NextFunction, response } from 'expres
 import { Prisma } from '../../../generated/prisma/client.js';
 import { createUserService, getAllUsersService } from './users.service.js';
 import type { CreateUserInput } from './users.validation.js';
+import { ENTITY_TYPES } from '../../constant/constant.js';
 
 export const getAllUsers =  async(req:Request, res:Response, next:NextFunction,)=>{
 try{
@@ -28,7 +29,7 @@ export const createUser = async (
 
     const createdRecord = await createUserService(input);
 
-    const isBuyer = input.entityType === 'Buyer';
+    const isBuyer = input.entityType === ENTITY_TYPES.BUYER;
 
     return res.status(201).json({
       success: true,
