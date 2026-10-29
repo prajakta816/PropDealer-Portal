@@ -7,8 +7,12 @@ interface PublicOnlyRouteProps {
 }
 
 export function PublicOnlyRoute({ children }: PublicOnlyRouteProps) {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, isLoading } = useAuth()
 
+  if (isLoading) {
+    return <div>Checking session...</div>
+  }
+  
   if (isAuthenticated) {
     return <Navigate to="/dashboard" replace />
   }
