@@ -1,6 +1,7 @@
 
 import { z } from 'zod';
-import { ENTITY_TYPES, ROLES } from '../../constant/constant.js';
+import { ENTITY_TYPES } from '../../constants/entityTypes.js';
+import { ROLES } from '../../constants/roles.js';
 
 const userSchema = z
   .object({

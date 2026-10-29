@@ -1,6 +1,6 @@
 
 import { prisma } from '../../../prisma/prisma.js';
-import type { UserRole } from '../../constant/constant.js';
+import type { UserRole } from '../../constants/roles.js';
 
 interface CreateUserRepositoryInput {
   name: string;

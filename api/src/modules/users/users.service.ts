@@ -1,20 +1,16 @@
-
 import bcrypt from 'bcryptjs';
-import {
-  ENTITY_TYPES,
-  ROLES,
-  type UserRole,
-} from '../../constant/constant.js';
+import { ENTITY_TYPES } from '../../constants/entityTypes.js';
 import {
   createUser,
   createBuyer,
-  getAllUsers
+  getAllUsers,
 } from './users.repository.js';
 import type { CreateUserInput } from './users.validation.js';
 
-export const getAllUsersService = async()=>{
+export const getAllUsersService = async () => {
   return getAllUsers();
-}
+};
+
 export const createUserService = async (
   userData: CreateUserInput,
 ) => {
