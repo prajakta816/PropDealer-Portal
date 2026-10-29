@@ -1,7 +1,6 @@
 import apiClient from "./apiClient";
 
-export type UserRole = 'Admin'|'Agent'|'CommissionManager';
-
+import { type UserRole } from "../constants/roles";
 export interface AuthUser{
     name: string,
     email:string,
