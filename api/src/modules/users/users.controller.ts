@@ -4,18 +4,20 @@ import { Prisma } from '../../../generated/prisma/client.js';
 import { createUserService, getAllUsersService } from './users.service.js';
 import type { CreateUserInput } from './users.validation.js';
 
-export const getAllUsers =  async(req:Request, res:Response, next:NextFunction,)=>{
-try{
-  const users = await getAllUsersService();
+import { MESSAGES } from '../../constants/messages.js';
 
-  return res.status(200).json({
-    success:true,
-    message:"users retrived successfully",
-    data:users
-  })
-}catch(error){
+export const getAllUsers = async (req: Request, res: Response, next: NextFunction,) => {
+  try {
+    const users = await getAllUsersService();
+
+    return res.status(200).json({
+      success: true,
+      message: MESSAGES.SUCCESS.USERS_RETRIEVED,
+      data: users
+    })
+  } catch (error) {
     next(error)
-}
+  }
 }
 
 export const createUser = async (
@@ -33,8 +35,8 @@ export const createUser = async (
     return res.status(201).json({
       success: true,
       message: isBuyer
-        ? 'Buyer created successfully'
-        : 'User created successfully',
+        ? MESSAGES.SUCCESS.BUYER_CREATED
+        : MESSAGES.SUCCESS.USER_CREATED,
       data: createdRecord,
     });
   } catch (error) {
@@ -44,7 +46,7 @@ export const createUser = async (
     ) {
       return res.status(409).json({
         success: false,
-        message: 'A record with this email already exists.',
+        message: MESSAGES.ERROR.EMAIL_ALREADY_EXISTS,
       });
     }
 

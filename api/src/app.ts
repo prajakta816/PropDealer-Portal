@@ -6,6 +6,8 @@ import authRouter from './modules/auth/auth.routes.js';
 import usersRouter from './modules/users/users.routes.js';
 import { prisma } from '../prisma/prisma.js';
 
+import { MESSAGES } from './constants/messages.js';
+
 const app = express();
 
 app.use(express.json());
@@ -23,7 +25,7 @@ app.get('/', (req, res) => {
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     status: 'success',
-    message: 'server running successfully',
+    message: MESSAGES.SUCCESS.SERVER_RUNNING,
   });
 });
 
@@ -51,7 +53,7 @@ app.get('/api/health/db', async (req, res) => {
 app.use('/api/users', usersRouter);
 
 //auth routes
-app.use('/api/auth',authRouter);
+app.use('/api/auth', authRouter);
 
 export default app;
 
