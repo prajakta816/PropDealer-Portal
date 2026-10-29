@@ -1,11 +1,13 @@
 
-import { type Request, type Response, type NextFunction, response } from 'express';
+import { type Request, type Response, type NextFunction} from 'express';
 import { Prisma } from '../../../generated/prisma/client.js';
 import { createUserService, getAllUsersService } from './users.service.js';
 import type { CreateUserInput } from './users.validation.js';
 
 import { MESSAGES } from '../../constants/messages.js';
 import { StatusCodes } from 'http-status-codes';
+import { ROLES } from '../../constants/roles.js';
+import { ENTITY_TYPES } from '../../constants/entityTypes.js';
 
 export const getAllUsers = async (req: Request, res: Response, next: NextFunction,) => {
   try {
@@ -29,9 +31,19 @@ export const createUser = async (
   try {
     const input = req.body as CreateUserInput;
 
+    if (
+      input.entityType === ENTITY_TYPES.USER &&
+      req.user?.role !== ROLES.ADMIN
+    ) {
+      return res.status(StatusCodes.FORBIDDEN).json({
+        success: false,
+        message: MESSAGES.ERROR.UNAUTHORIZED,
+      });
+    }
+
     const createdRecord = await createUserService(input);
 
-    const isBuyer = input.entityType === 'Buyer';
+    const isBuyer = input.entityType === ENTITY_TYPES.BUYER;
 
     return res.status(StatusCodes.CREATED).json({
       success: true,
