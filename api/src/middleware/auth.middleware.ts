@@ -26,14 +26,14 @@ declare global {
 export const authenticateToken = async (req: Request, res: Response, next: NextFunction) => {
     try {
         const authHeader = req.headers.authorization;
-        const token = authHeader?.startsWith('Bearer')
+        const token = authHeader?.startsWith('Bearer ')
             ? authHeader.split(' ')[1]
             : undefined;
         if (!token) {
             return res.status(StatusCodes.UNAUTHORIZED).json({ success: false, message: MESSAGES.ERROR.AUTHENTICATION_TOKEN_REQUIRED });
         }
 
-        const decoded = jwt.verify(token, env.JWT_SECRET);
+        const decoded = jwt.verify(token, env.JWT_SECRET, { algorithms: ['HS256'] });
         if (typeof decoded === 'string' || !decoded.sub) {
             return res.status(StatusCodes.UNAUTHORIZED).json({ success: false, message: MESSAGES.ERROR.INVALID_AUTHENTICATION_TOKEN });
         }
