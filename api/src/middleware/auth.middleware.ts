@@ -51,7 +51,7 @@ export const authenticateToken = async(req: Request, res:Response, next:NextFunc
     }
 }
 
-export const autherizeRole =(...allowedRoles : UserRole[]) =>{
+export const authorizeRole =(...allowedRoles : UserRole[]) =>{
     return (req: Request , res: Response, next: NextFunction)=>{
         if(!req.user){
             return res.status(401).json({success: false , message : "Authentication required."})
