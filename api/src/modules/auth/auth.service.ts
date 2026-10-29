@@ -45,7 +45,7 @@ export const loginService = async(loginData : loginInput)=>{
 
 export const getCurrentUserService =async(token:string)=>{
     try{
-        const decoded = jwt.verify(token , env.JWT_SECRET);
+        const decoded = jwt.verify(token , env.JWT_SECRET, { algorithms: ['HS256'] });
         if(typeof decoded === 'string' || !decoded.sub){
             throw createAuthError(MESSAGES.ERROR.INVALID_OR_EXPIRED_TOKEN, StatusCodes.UNAUTHORIZED);
         }
