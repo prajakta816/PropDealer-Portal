@@ -37,11 +37,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try{
         const response = await getCurrentUserApi();
         setUser(response.data.user);
-      }catch{
-         localStorage.removeItem('accessToken');
-         setUser(null);
-         setToken(null);
-      }finally{
+      } catch (error: unknown) {
+        const status =
+          typeof error === 'object' && error !== null && 'response' in error
+            ? (error as { response?: { status?: number } }).response?.status
+            : undefined;
+
+        if (status === 401) {
+          localStorage.removeItem('accessToken');
+          setToken(null);
+        }
+
+        setUser(null);
+      } finally{
          setIsLoading(false);
       }
     };
