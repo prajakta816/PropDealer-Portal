@@ -4,7 +4,7 @@ import {
   type NextFunction,
 } from "express";
 
-import { loginService, getCurrentUserService } from "./auth.service.js";
+import { loginService,} from "./auth.service.js";
 import { loginInput } from "./auth.validation.js";
 
 import { MESSAGES } from '../../constants/messages.js';
@@ -64,30 +64,28 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
   }
 }
 
-export const getCurrentUser = async (req: Request, res: Response, next: NextFunction) => {
+export const getCurrentUser = ( req: Request, res: Response, next: NextFunction ) => {
   try {
-    // const token = req.cookies?.accessToken;
-    const authHeader = req.headers.authorization;
-    const token = authHeader?.startsWith('Bearer ')
-      ? authHeader.split(' ')[1]
-      : undefined;
+    const user = req.user;
 
-    if (!token) {
-      res.status(StatusCodes.UNAUTHORIZED).json({
+    if (!user) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({
         status: 'error',
-        message: MESSAGES.ERROR.NOT_AUTHENTICATED
+        message: MESSAGES.ERROR.NOT_AUTHENTICATED,
       });
-      return;
     }
 
-    const user = await getCurrentUserService(token);
     return res.status(StatusCodes.OK).json({
       status: 'success',
       data: {
-        user,
-      }
+        user: {
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
+      },
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
-}
+};
