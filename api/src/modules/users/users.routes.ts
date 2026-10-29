@@ -22,7 +22,7 @@ router.get(
 router.post(
   '/',
   authenticateToken,
-  autherizeRole(ROLES.ADMIN),
+  autherizeRole(ROLES.ADMIN , ROLES.AGENT),
   validate(createUserSchema),
   createUser,
 );
