@@ -79,7 +79,7 @@ export async function createUserApi( userData: CreateUserRequest, ): Promise<Cre
           role: userData.role,
         };
 
-    const response = await axios.post<CreateUserResponse>(
+    const response = await apiClient.post<CreateUserResponse>(
       '/users',
       requestPayload,
     );

@@ -1,6 +1,6 @@
 import { prisma } from '../../../prisma/prisma.js';
 import type { CreateUserRepositoryInput, CreateBuyerRepositoryInput } from './users.types.js';
-
+import { ENTITY_TYPES } from '../../constants/entityTypes.js';
 const auditUserSelect = {
   id: true,
   name: true,
@@ -39,7 +39,7 @@ export const getAllUsers = async () => {
     ...users,
     ...buyers.map((buyer) => ({
       ...buyer,
-      role: 'Buyer' as const,
+      role: ENTITY_TYPES.BUYER,
     })),
   ];
 
