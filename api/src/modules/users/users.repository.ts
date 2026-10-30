@@ -1,29 +1,11 @@
-
 import { prisma } from '../../../prisma/prisma.js';
-import type { UserRole } from '../../constants/roles.js';
-
-interface CreateUserRepositoryInput {
-  name: string;
-  email: string;
-  passwordHash: string;
-  role: UserRole;
-  createdById?: string;
-  updatedById?: string;
-}
-
-interface CreateBuyerRepositoryInput {
-  name: string;
-  email: string;
-  createdById?: string;
-  updatedById?: string;
-}
+import type { CreateUserRepositoryInput, CreateBuyerRepositoryInput } from './users.types.js';
 
 const auditUserSelect = {
   id: true,
   name: true,
   email: true,
 } as const;
-
 
 export const getAllUsers = async () => {
   const [users, buyers] = await Promise.all([
