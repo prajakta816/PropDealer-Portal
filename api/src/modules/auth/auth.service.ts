@@ -2,9 +2,9 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 import { env } from "../../config/env.js";
-import { findUserByEmail } from './auth.repository.js';
+import { findUserByEmail, findUserById } from './auth.repository.js';
 import type { loginInput } from "./auth.validation.js";
-import type { LoginServiceResult } from "./auth.types.js";
+import type { LoginServiceResult , CurrentUserServiceResult } from "./auth.types.js";
 
 import { MESSAGES } from "../../constants/messages.js";
 import { StatusCodes } from 'http-status-codes';
@@ -42,3 +42,17 @@ export const loginService = async (loginData: loginInput): Promise<LoginServiceR
         },
     };
 };
+
+export const getCurrentUserService = async(userId: string):Promise<CurrentUserServiceResult>=>{
+    const user = await findUserById(userId);
+
+    if(!user){
+        throw createAuthError(MESSAGES.ERROR.USER_NOT_FOUND,StatusCodes.UNAUTHORIZED);
+    }
+
+    return{
+        name:user.name,
+        email:user.email,
+        role:user.role
+    }
+}
