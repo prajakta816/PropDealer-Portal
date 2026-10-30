@@ -7,21 +7,7 @@ import { findUserById } from "../modules/auth/auth.repository.js";
 import { UserRole } from "../constants/roles.js";
 import { MESSAGES } from "../constants/messages.js";
 import { StatusCodes } from 'http-status-codes';
-
-export interface AuthenticatedUser {
-    id: string,
-    name: string,
-    email: string,
-    role: UserRole
-}
-
-declare global {
-    namespace Express {
-        interface Request {
-            user?: AuthenticatedUser;
-        }
-    }
-}
+import type { AuthenticatedUser } from '../types/auth.types.js';
 
 export const authenticateToken = async (req: Request, res: Response, next: NextFunction) => {
     try {
