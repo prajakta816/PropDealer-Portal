@@ -4,7 +4,7 @@ import {
   type NextFunction,
 } from "express";
 
-import { loginService,} from "./auth.service.js";
+import { getCurrentUserService, loginService,} from "./auth.service.js";
 import { loginInput } from "./auth.validation.js";
 
 import { MESSAGES } from '../../constants/messages.js';
@@ -64,26 +64,20 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
   }
 }
 
-export const getCurrentUser = ( req: Request, res: Response, next: NextFunction ) => {
+export const getCurrentUser = async ( req: Request, res: Response, next: NextFunction ) => {
   try {
-    const user = req.user;
-
-    if (!user) {
+    if (!req.user?.id) {
       return res.status(StatusCodes.UNAUTHORIZED).json({
-        status: 'error',
+        success:false,
         message: MESSAGES.ERROR.NOT_AUTHENTICATED,
       });
     }
-
+  
+    const userData = await getCurrentUserService(req.user.id);
     return res.status(StatusCodes.OK).json({
-      status: 'success',
-      data: {
-        user: {
-          name: user.name,
-          email: user.email,
-          role: user.role,
-        },
-      },
+      success:true,
+      message: MESSAGES.SUCCESS.USERS_RETRIEVED,
+      data:userData
     });
   } catch (error) {
     return next(error);
