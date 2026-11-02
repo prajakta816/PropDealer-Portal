@@ -36,7 +36,7 @@ export const createMasterData = async (
 ) => {
   try {
     const input = req.body as CreateMasterDataInput;
-    const createdItem = await createMasterDataService(input);
+    const createdItem = await createMasterDataService(input,  req.user!.id);
 
     return res.status(StatusCodes.CREATED).json({
       success: true,
@@ -68,7 +68,7 @@ export const updateMasterData = async (
     const id = req.params.id as string;
     const input = req.body as UpdateMasterDataInput;
 
-    const updatedItem = await updateMasterDataService(id, input);
+    const updatedItem = await updateMasterDataService(id, input,req.user!.id);
 
     return res.status(StatusCodes.OK).json({
       success: true,

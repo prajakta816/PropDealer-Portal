@@ -1,25 +1,37 @@
-import {prisma} from '../../../prisma/prisma.js';
+import { prisma } from '../../../prisma/prisma.js';
 
-import type {CreateMasterDataRepoInput, MasterDataRecord, UpdateMasterDataRepoInput} from './masterData.types.js';
-import type{MasterDataCategory} from '../../constants/masterData.js';
+import type {
+  CreateMasterDataRepoInput,
+  UpdateMasterDataRepoInput,
+} from './masterData.types.js';
+import type { MasterDataCategory } from '../../constants/masterData.js';
 
-export const createMasterDataRecord = (data: CreateMasterDataRepoInput): Promise<MasterDataRecord>=>{
-    return prisma.masterData.create({
-        data,
-    });
+export const createMasterDataRecord = (data: CreateMasterDataRepoInput) => {
+  return prisma.masterData.create({
+    data: {
+      category    : data.category,
+      value       : data.value,
+      createdById : data.createdById,
+      updatedById : data.updatedById,
+    },
+  });
 };
 
 export const updateMasterDataRecord = (
-    id: string ,
-    data:UpdateMasterDataRepoInput
-   ):Promise<MasterDataRecord>=>{
-    return prisma.masterData.update({
-        where: {id},
-        data,
-    })
-   }
+  id: string,
+  data: UpdateMasterDataRepoInput,
+) => {
+  return prisma.masterData.update({
+    where: { id },
+    data: {
+      ...(data.category ? { category: data.category } : {}),
+      ...(data.value    ? { value: data.value }       : {}),
+      updatedById: data.updatedById,
+    },
+  });
+};
 
-export const findAllMasterData = (): Promise<MasterDataRecord[]> => {
+export const findAllMasterData = () => {
   return prisma.masterData.findMany({
     orderBy: [
       { category: 'asc' },
@@ -28,7 +40,7 @@ export const findAllMasterData = (): Promise<MasterDataRecord[]> => {
   });
 };
 
-export const findMasterDataById = (id: string): Promise<MasterDataRecord | null> => {
+export const findMasterDataById = (id: string) => {
   return prisma.masterData.findUnique({
     where: { id },
   });
@@ -37,7 +49,7 @@ export const findMasterDataById = (id: string): Promise<MasterDataRecord | null>
 export const findMasterDataByCategoryAndValue = (
   category: MasterDataCategory,
   value: string,
-): Promise<MasterDataRecord | null> => {
+) => {
   return prisma.masterData.findFirst({
     where: {
       category,

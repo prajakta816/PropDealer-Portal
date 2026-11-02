@@ -41,7 +41,7 @@ export const createUser = async (
       });
     }
 
-    const createdRecord = await createUserService(input);
+    const createdRecord = await createUserService(input, req.user!.id);
 
     const isBuyer = input.entityType === ENTITY_TYPES.BUYER;
 

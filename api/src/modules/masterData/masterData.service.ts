@@ -26,6 +26,7 @@ export const getAllMasterDataService = async (): Promise<MasterDataRecord[]> => 
 
 export const createMasterDataService = async (
   input: CreateMasterDataInput,
+  userId: string,
 ): Promise<MasterDataRecord> => {
   const category = input.category as MasterDataCategory;
 
@@ -44,12 +45,15 @@ export const createMasterDataService = async (
   return createMasterDataRecord({
     category,
     value: input.value,
+    createdById: userId,
+    updatedById: userId,
   });
 };
 
 export const updateMasterDataService = async (
   id: string,
   input: UpdateMasterDataInput,
+  updatedById: string,
 ): Promise<MasterDataRecord> => {
   const existingRecord = await findMasterDataById(id);
 
@@ -78,5 +82,6 @@ export const updateMasterDataService = async (
   return updateMasterDataRecord(id, {
     category: input.category as MasterDataCategory | undefined,
     value: input.value,
+    updatedById: updatedById,
   });
 };
