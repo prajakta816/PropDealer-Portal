@@ -5,6 +5,10 @@ export const MESSAGES = {
     BUYER_CREATED: 'Buyer created successfully',
     USERS_RETRIEVED: 'Users retrieved successfully',
     LOGIN_SUCCESS: 'Login successful',
+
+    MASTER_DATA_CREATED: 'Master data created successfully',
+    MASTER_DATA_UPDATED: 'Master data updated successfully',
+    MASTER_DATA_RETRIEVED: 'Master data retrieved successfully',
   },
 
   ERROR: {
@@ -20,5 +24,8 @@ export const MESSAGES = {
 
     EMAIL_ALREADY_EXISTS: 'A record with this email already exists.',
     VALIDATION_FAILED: 'Validation failed',
+
+    MASTER_DATA_NOT_FOUND: 'Master data record not found.',
+    MASTER_DATA_ALREADY_EXISTS: 'A master data record with this category and value already exists.',
   },
 } as const;

@@ -55,3 +55,22 @@ model Buyer {
   createdBy User? @relation("BuyerCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   updatedBy User? @relation("BuyerUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
 }
+
+enum MasterDataCategory {
+  PropertyType
+  City
+  FurnishingStatus
+  DealLossReason
+}
+
+model MasterData {
+  id        String             @id @default(uuid()) @db.Uuid
+  category  MasterDataCategory
+  value     String
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  @@unique([category, value])
+  @@map("master_data")
+}
+

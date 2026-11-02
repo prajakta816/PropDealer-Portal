@@ -4,6 +4,8 @@ import cookieParser from 'cookie-parser';
 
 import authRouter from './modules/auth/auth.routes.js';
 import usersRouter from './modules/users/users.routes.js';
+import masterDataRouter from './modules/masterData/masterData.routes.js';
+
 import { prisma } from '../prisma/prisma.js';
 
 import { MESSAGES } from './constants/messages.js';
@@ -56,5 +58,7 @@ app.use('/api/users', usersRouter);
 //auth routes
 app.use('/api/auth', authRouter);
 
+//master data routes
+app.use('/api/master-data', masterDataRouter);
 export default app;
 
