@@ -9,11 +9,20 @@ import type { MasterDataCategory } from '../../constants/masterData.js';
 export const createMasterDataRecord = (data: CreateMasterDataRepoInput) => {
   return prisma.masterData.create({
     data: {
-      category    : data.category,
-      value       : data.value,
-      createdById : data.createdById,
-      updatedById : data.updatedById,
+      category: data.category,
+      value: data.value,
+      createdById: data.createdById,
+      updatedById: data.updatedById,
     },
+    include: {
+    createdBy: {
+      select: { name: true, },
+    },
+    updatedBy: {
+      select: { name: true, },
+    },
+  },
+
   });
 };
 
@@ -25,7 +34,7 @@ export const updateMasterDataRecord = (
     where: { id },
     data: {
       ...(data.category ? { category: data.category } : {}),
-      ...(data.value    ? { value: data.value }       : {}),
+      ...(data.value ? { value: data.value } : {}),
       updatedById: data.updatedById,
     },
   });
@@ -33,6 +42,15 @@ export const updateMasterDataRecord = (
 
 export const findAllMasterData = () => {
   return prisma.masterData.findMany({
+    include: {
+      createdBy: {
+        select: { name: true, },
+      },
+      updatedBy: {
+        select: { name: true, },
+      },
+    },
+
     orderBy: [
       { category: 'asc' },
       { value: 'asc' },
