@@ -11,6 +11,8 @@ import { prisma } from '../prisma/prisma.js';
 import { MESSAGES } from './constants/messages.js';
 import { StatusCodes } from 'http-status-codes';
 
+import { errorHandler } from './middleware/error.js';
+
 const app = express();
 
 app.use(express.json());
@@ -60,5 +62,9 @@ app.use('/api/auth', authRouter);
 
 //master data routes
 app.use('/api/master-data', masterDataRouter);
+
+// Error handling middleware
+app.use(errorHandler);
+
 export default app;
 
