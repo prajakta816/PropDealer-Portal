@@ -13,11 +13,14 @@ export const getAllUsersService = async () => {
 
 export const createUserService = async (
   userData: CreateUserInput,
+  actorId: string,
 ) => {
   if (userData.entityType === ENTITY_TYPES.BUYER) {
     return createBuyer({
       name: userData.name,
       email: userData.email,
+      createdById: actorId,
+      updatedById: actorId,
     });
   }
 
@@ -28,5 +31,7 @@ export const createUserService = async (
     email: userData.email,
     passwordHash,
     role: userData.role,
+    createdById: actorId,
+    updatedById: actorId,
   });
 };

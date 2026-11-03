@@ -38,6 +38,9 @@ model User {
   // Buyers created or updated by this User.
   buyersCreated Buyer[] @relation("BuyerCreatedBy")
   buyersUpdated Buyer[] @relation("BuyerUpdatedBy")
+
+  masterDataCreated MasterData[] @relation("MasterDataCreatedBy")
+  masterDataUpdated MasterData[] @relation("MasterDataUpdatedBy")
 }
 
 model Buyer {
@@ -55,3 +58,27 @@ model Buyer {
   createdBy User? @relation("BuyerCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   updatedBy User? @relation("BuyerUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
 }
+
+enum MasterDataCategory {
+  PropertyType
+  City
+  FurnishingStatus
+  DealLossReason
+}
+
+model MasterData {
+  id        String             @id @default(uuid()) @db.Uuid
+  category  MasterDataCategory
+  value     String
+  createdAt DateTime           @default(now())
+  createdById String?          @db.Uuid
+  updatedAt DateTime           @updatedAt
+  updatedById String?          @db.Uuid
+
+  createdBy User? @relation("MasterDataCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User? @relation("MasterDataUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@unique([category, value])
+  @@map("master_data")
+}
+
