@@ -15,12 +15,18 @@ export interface loginResponse{
     data:AuthUser
 }
 
+export interface CurrentUserResponse{
+    success: boolean,
+    message: string,
+    data:AuthUser
+}
+
 export const loginApi = async(email:string, password:string):Promise<loginResponse>=>{
     const response = await apiClient.post<loginResponse>('/auth/login',{email,password},);
     return response.data;
 }
 
-export const getCurrentUserApi = async()=>{
-    const response = await apiClient.get<{status:string,data:{user:AuthUser}}>('/auth/me');
+export const getCurrentUserApi = async() : Promise<CurrentUserResponse>=>{
+    const response = await apiClient.get<CurrentUserResponse>('/auth/me');
     return response.data;
 }
