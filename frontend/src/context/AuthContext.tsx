@@ -36,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       try{
         const response = await getCurrentUserApi();
-        setUser(response.data.user);
+        setUser(response.data);
       } catch (error: unknown) {
         const status =
           typeof error === 'object' && error !== null && 'response' in error
