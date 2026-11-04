@@ -1,15 +1,15 @@
 import axios from 'axios';
 import apiClient from './apiClient';
-import type { MasterDataCategory } from '../constants/masterData.ts';
+import type { MasterDataCategory } from '../constants/masterData';
 
-interface MasterDataItem {
+export interface MasterDataItem {
     id: string,
     category: MasterDataCategory,
     value: string,
     createdAt: string,
     createdById: string | null,
     createdBy: { name: string } | null,
-    updatedAt: string 
+    updatedAt: string
     updatedById: string | null,
     updatedBy: { name: string } | null
 }
@@ -83,7 +83,7 @@ export async function createMasterDataApi(data: CreateMasterDataRequest,): Promi
 export async function updateMasterDataApi(id: string,
     data: UpdateMasterDataRequest): Promise<MasterDataItem> {
     try {
-        const response = await apiClient.put<MasterDataSingleResponse>(`/master-data/${id}`, data);
+        const response = await apiClient.patch<MasterDataSingleResponse>(`/master-data/${id}`, data);
         const result = response.data;
         if (!result.success || !result.data) {
             throw new Error(result.message || "failed to update the master data");
@@ -102,4 +102,3 @@ export async function updateMasterDataApi(id: string,
         throw new Error('An unexpected error occurred.', { cause: error });
     }
 }
-
