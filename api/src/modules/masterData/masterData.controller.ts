@@ -44,17 +44,6 @@ export const createMasterData = async (
       data: createdItem,
     });
   } catch (error) {
-    if (
-      error instanceof Error &&
-      'statusCode' in error &&
-      typeof error.statusCode === 'number'
-    ) {
-      return res.status(error.statusCode).json({
-        success: false,
-        message: error.message,
-      });
-    }
-
     next(error);
   }
 };
@@ -76,17 +65,6 @@ export const updateMasterData = async (
       data: updatedItem,
     });
   } catch (error) {
-    if (
-      error instanceof Error &&
-      'statusCode' in error &&
-      typeof error.statusCode === 'number'
-    ) {
-      return res.status(error.statusCode).json({
-        success: false,
-        message: error.message,
-      });
-    }
-
     next(error);
   }
 };

@@ -54,5 +54,14 @@ export const updateMasterDataSchema = z
     message: 'At least one field (category or value) must be provided to update',
   });
 
+  export const updateMasterDataRequestSchema = z.object({
+  params: z.object({
+    id: z.string().uuid('Invalid master data ID format'),
+  }),
+  body: updateMasterDataSchema,
+});
+
+
 export type CreateMasterDataInput = z.infer<typeof createMasterDataSchema>;
 export type UpdateMasterDataInput = z.infer<typeof updateMasterDataSchema>;
+

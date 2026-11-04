@@ -11,7 +11,7 @@ import { ROLES } from '../../constants/roles.js';
 
 import {
   createMasterDataSchema,
-  updateMasterDataSchema,
+  updateMasterDataRequestSchema,
 } from './masterData.validation.js';
 
 import {
@@ -26,6 +26,6 @@ router.use(authenticateToken, authorizeRole(ROLES.ADMIN));
 
 router.get('/', getAllMasterData);
 router.post('/', validate(createMasterDataSchema), createMasterData);
-router.put('/:id', validate(updateMasterDataSchema), updateMasterData);
+router.patch('/:id', validate(updateMasterDataRequestSchema , 'request'), updateMasterData);
 
 export default router;
