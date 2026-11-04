@@ -22,6 +22,7 @@ import {
     EditOutlined,
     RestartAlt,
     Search,
+    VisibilityOutlined,
 } from '@mui/icons-material'
 
 import {
@@ -41,7 +42,7 @@ import {
     type MasterDataItem,
 } from '../api/masterDataApi'
 
-import { MasterDataDialog } from '../component/masterData/MasterDataDialog'
+import { MasterDataDialog, type DialogMode } from '../component/masterData/MasterDataDialog'
 
 const CATEGORY_COLORS: Record<
     MasterDataCategory,
@@ -64,9 +65,7 @@ export function MasterDataPage() {
         MasterDataCategory | typeof ALL_CATEGORIES_FILTER
     >(ALL_CATEGORIES_FILTER)
 
-    const [dialogMode, setDialogMode] = useState<
-        'create' | 'edit' | null
-    >(null)
+    const [dialogMode, setDialogMode] = useState<DialogMode | null>(null)
 
     const [selectedItem, setSelectedItem] = useState<MasterDataItem | null>(null)
 
@@ -132,6 +131,11 @@ export function MasterDataPage() {
         setDialogMode('edit')
     }
 
+    const openView = (item: MasterDataItem) => {
+        setSelectedItem(item)
+        setDialogMode('view')
+    }
+
     const closeDialog = () => {
         setDialogMode(null)
         setSelectedItem(null)
@@ -145,7 +149,7 @@ export function MasterDataPage() {
             ])
 
             setToastMessage(`"${savedItem.value}" added successfully.`)
-        } else {
+        } else if (dialogMode === 'edit') {
             setMasterData((previousData) =>
                 previousData.map((item) =>
                     item.id === savedItem.id ? savedItem : item
@@ -167,18 +171,36 @@ export function MasterDataPage() {
         {
             field: 'actions',
             headerName: 'Actions',
-            width: 80,
+            width: 110,
             sortable: false,
             renderCell: (params: GridRenderCellParams<MasterDataItem>) => (
-                <Tooltip title="Edit">
-                    <IconButton
-                        size="small"
-                        onClick={() => openEdit(params.row)}
-                        sx={{ color: 'primary.main' }}
-                    >
-                        <EditOutlined fontSize="small" />
-                    </IconButton>
-                </Tooltip>
+                <Box className="flex items-center gap-1">
+                    <Tooltip title="View Details">
+                        <IconButton
+                            size="small"
+                            onClick={() => openView(params.row)}
+                            sx={{
+                                color: '#64748b',
+                                '&:hover': { color: '#2563eb', backgroundColor: '#eff6ff' },
+                            }}
+                        >
+                            <VisibilityOutlined fontSize="small" />
+                        </IconButton>
+                    </Tooltip>
+
+                    <Tooltip title="Edit">
+                        <IconButton
+                            size="small"
+                            onClick={() => openEdit(params.row)}
+                            sx={{
+                                color: 'primary.main',
+                                '&:hover': { backgroundColor: '#eff6ff' },
+                            }}
+                        >
+                            <EditOutlined fontSize="small" />
+                        </IconButton>
+                    </Tooltip>
+                </Box>
             ),
         },
         {
@@ -230,11 +252,9 @@ export function MasterDataPage() {
         },
     ]
 
-
     return (
         <Box className="flex-1 bg-slate-50 p-6 md:p-8">
             <Container maxWidth="xl" disableGutters>
-
                 <Box className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
                     <Box>
                         <Typography
@@ -274,19 +294,20 @@ export function MasterDataPage() {
                     sx={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
                 >
                     <Box className="flex flex-wrap gap-3">
-
                         <TextField
                             size="small"
                             placeholder="Search by value..."
                             value={searchQuery}
                             onChange={(event) => setSearchQuery(event.target.value)}
                             className="min-w-[220px] flex-1"
-                            InputProps={{
-                                startAdornment: (
-                                    <InputAdornment position="start">
-                                        <Search className="text-slate-400" />
-                                    </InputAdornment>
-                                ),
+                            slotProps={{
+                                input: {
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <Search className="text-slate-400" />
+                                        </InputAdornment>
+                                    ),
+                                },
                             }}
                         />
 
@@ -354,7 +375,6 @@ export function MasterDataPage() {
                         rowHeight={64}
                     />
                 </Box>
-
             </Container>
 
             <MasterDataDialog
@@ -384,5 +404,4 @@ export function MasterDataPage() {
             </Snackbar>
         </Box>
     )
-
 }
