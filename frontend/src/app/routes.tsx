@@ -1,13 +1,13 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import PublicLayout from '../component/public/PublicLayout'
 import HomePage from '../pages/HomePage'
-import {LoginPage}  from '../pages/LoginPage'
+import { LoginPage } from '../pages/LoginPage'
 import AppLayout from '../component/layout/AppLayout'
 import { DashboardPage } from '../pages/DashboardPage'
 import { UserListPage } from '../pages/UserListPage'
 import { PropertyListPage } from '../pages/PropertyListPage'
 import { PlaceholderPage } from '../pages/PlaceholderPage'
-import { MasterDataPage } from '../pages/MasterDataPage'
+
 import { ProtectedRoute } from './guards/ProtectedRoute'
 import { PublicOnlyRoute } from './guards/PublicOnlyRoute'
 import { ROLES } from '../constants/roles'
@@ -120,7 +120,10 @@ function AppRoutes() {
             path="/master-data"
             element={
               <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
-                <MasterDataPage />
+                <PlaceholderPage
+                  title="Master Data Configuration"
+                  description="Property types, locations, commission rates, and taxonomy tables."
+                />
               </ProtectedRoute>
             }
           />
