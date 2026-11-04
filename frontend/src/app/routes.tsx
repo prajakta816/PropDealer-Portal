@@ -7,7 +7,7 @@ import { DashboardPage } from '../pages/DashboardPage'
 import { UserListPage } from '../pages/UserListPage'
 import { PropertyListPage } from '../pages/PropertyListPage'
 import { PlaceholderPage } from '../pages/PlaceholderPage'
-
+import { MasterDataPage } from '../pages/MasterDataPage'
 import { ProtectedRoute } from './guards/ProtectedRoute'
 import { PublicOnlyRoute } from './guards/PublicOnlyRoute'
 import { ROLES } from '../constants/roles'
@@ -120,10 +120,7 @@ function AppRoutes() {
             path="/master-data"
             element={
               <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
-                <PlaceholderPage
-                  title="Master Data Configuration"
-                  description="Property types, locations, commission rates, and taxonomy tables."
-                />
+                <MasterDataPage />
               </ProtectedRoute>
             }
           />
