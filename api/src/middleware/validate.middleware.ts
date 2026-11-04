@@ -24,8 +24,11 @@ export const validate = (schema: ZodTypeAny, mode: 'body' | 'request' = 'body') 
     }
 
     if (mode === 'request') {
-      req.params = result.data.params as Record<string, string>;
-      req.body   = result.data.body;
+      const data = result.data as { params: Record<string, string>; body: unknown };
+      if (data.params) {
+        req.params = data.params;
+      }
+      req.body = data.body;
     } else {
       req.body = result.data;
     }

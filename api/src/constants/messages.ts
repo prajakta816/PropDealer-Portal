@@ -9,6 +9,11 @@ export const MESSAGES = {
     MASTER_DATA_CREATED: 'Master data created successfully',
     MASTER_DATA_UPDATED: 'Master data updated successfully',
     MASTER_DATA_RETRIEVED: 'Master data retrieved successfully',
+
+    BUYER_UPDATED: 'Buyer updated successfully',
+    BUYER_DELETED: 'Buyer deleted successfully',
+    BUYER_RETRIEVED: 'Buyer retrieved successfully',
+    BUYERS_RETRIEVED: 'Buyers retrieved successfully',
   },
 
   ERROR: {
@@ -27,5 +32,8 @@ export const MESSAGES = {
 
     MASTER_DATA_NOT_FOUND: 'Master data record not found.',
     MASTER_DATA_ALREADY_EXISTS: 'A master data record with this category and value already exists.',
+
+    BUYER_NOT_FOUND: 'Buyer not found.',
+    BUYER_ALREADY_EXISTS: 'A buyer with this email already exists.',
   },
 } as const;
