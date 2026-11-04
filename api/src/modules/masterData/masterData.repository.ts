@@ -14,15 +14,6 @@ export const createMasterDataRecord = (data: CreateMasterDataRepoInput) => {
       createdById: data.createdById,
       updatedById: data.updatedById,
     },
-    include: {
-    createdBy: {
-      select: { name: true, },
-    },
-    updatedBy: {
-      select: { name: true, },
-    },
-  },
-
   });
 };
 
@@ -42,15 +33,6 @@ export const updateMasterDataRecord = (
 
 export const findAllMasterData = () => {
   return prisma.masterData.findMany({
-    include: {
-      createdBy: {
-        select: { name: true, },
-      },
-      updatedBy: {
-        select: { name: true, },
-      },
-    },
-
     orderBy: [
       { category: 'asc' },
       { value: 'asc' },
