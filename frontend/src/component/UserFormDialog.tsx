@@ -65,7 +65,6 @@ export default function UserFormDialog({ open, onClose, onUserCreated }: UserFor
         email: email.trim().toLowerCase(),
       })
 
-      // Send the newly created database buyer back to the parent dropdown
       onUserCreated(createdBuyer)
 
       resetForm()

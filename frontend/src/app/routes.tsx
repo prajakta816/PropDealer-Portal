@@ -52,7 +52,10 @@ function AppRoutes() {
             path="/agents"
             element={
               <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
-                <BuyerListPage/>
+                <PlaceholderPage
+                  title="Agent Management"
+                  description="Admin workspace to view, create, and manage registered agents."
+                />
               </ProtectedRoute>
             }
           />
