@@ -1,4 +1,3 @@
-
 import { useState, type FormEvent } from 'react'
 import {
   Alert,
@@ -12,35 +11,25 @@ import {
   TextField,
 } from '@mui/material'
 
-import {
-  USERS_STORAGE_KEY,
-  hashPassword,
-  type StoredUser,
-  type User,
-} from '../context/authConstants'
-
-import { ROLES } from '../constants/roles'
+import { createBuyerApi, type BuyerItem } from '../api/buyersApi'
+import { validateName, validateEmail } from '../utils/validation'
 
 interface UserFormDialogProps {
   open: boolean
   onClose: () => void
-  onUserCreated: (user: User) => void
+  onUserCreated: (buyer: BuyerItem) => void
 }
 
-export default function UserFormDialog({ open, onClose, onUserCreated, }: UserFormDialogProps)
- {
+export default function UserFormDialog({ open, onClose, onUserCreated }: UserFormDialogProps) {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
-  // const [password, setPassword] = useState('')
-  // const [confirmPassword, setConfirmPassword] = useState('')
+
   const [errorMessage, setErrorMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const resetForm = () => {
     setName('')
     setEmail('')
-    // setPassword('')
-    // setConfirmPassword('')
     setErrorMessage('')
   }
 
@@ -51,102 +40,45 @@ export default function UserFormDialog({ open, onClose, onUserCreated, }: UserFo
     onClose()
   }
 
-  const handleSubmit = async (
-    event: FormEvent<HTMLFormElement>,
-  ) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    setErrorMessage('')
 
-    const trimmedName = name.trim()
-    const normalizedEmail = email.trim().toLowerCase()
+    const nameError = validateName(name)
+    const emailError = validateEmail(email)
 
-    //  !password || !confirmPassword checks were here.
-    // if (!trimmedName || !normalizedEmail || !password || !confirmPassword) {
-    if (!trimmedName || !normalizedEmail) {
-      setErrorMessage('Please fill in all fields.')
+    if (nameError) {
+      setErrorMessage(nameError)
       return
     }
 
-    // Email format
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
-      setErrorMessage('Please enter a valid email address.')
+    if (emailError) {
+      setErrorMessage(emailError)
       return
     }
-
-    // if (password.length < 6) {
-    //   setErrorMessage('Password must contain at least 6 characters.')
-    //   return
-    // }
-    // if (password !== confirmPassword) {
-    //   setErrorMessage('Passwords do not match.')
-    //   return
-    // }
 
     setIsSubmitting(true)
+    setErrorMessage('')
 
     try {
-      // Read every registered user, regardless of role.
-      const rawUsers = localStorage.getItem(USERS_STORAGE_KEY)
-      const storedUsers: StoredUser[] = rawUsers
-        ? JSON.parse(rawUsers)
-        : []
+      const createdBuyer = await createBuyerApi({
+        name: name.trim(),
+        email: email.trim().toLowerCase(),
+      })
 
-      if (!Array.isArray(storedUsers)) {
-        setErrorMessage('Unable to read registered users. Please try again.')
-        return
-      }
-
-      // Prevent duplicate emails across Admin, Agent, Buyer and other roles.
-      const emailExists = storedUsers.some(
-        (storedUser) =>
-          typeof storedUser.email === 'string' &&
-          storedUser.email.trim().toLowerCase() === normalizedEmail,
-      )
-
-      if (emailExists) {
-        setErrorMessage(
-          'This email is already registered. Select the existing Buyer if they have the Buyer role.',
-        )
-        return
-      }
-
-      // Auto-generate a placeholder hash from the email (no password set by agent).
-      const passwordHash = await hashPassword(normalizedEmail + '_buyer_placeholder')
-
-      const newUser: StoredUser = {
-        id: `usr_${Date.now()}`,
-        name: trimmedName,
-        email: normalizedEmail,
-        role: ROLES.BUYER,
-        passwordHash,
-        createdAt: new Date().toISOString(),
-      }
-
-      // Persist the Buyer using the shared storage key.
-      localStorage.setItem(
-        USERS_STORAGE_KEY,
-        JSON.stringify([...storedUsers, newUser]),
-      )
-
-      // Do not expose the password hash to the parent component.
-      const createdUser: User = {
-        id: newUser.id,
-        name: newUser.name,
-        email: newUser.email,
-        role: newUser.role,
-        createdAt: newUser.createdAt,
-      }
-
-      // Update the parent dropdown and select the new Buyer.
-      onUserCreated(createdUser)
+      // Send the newly created database buyer back to the parent dropdown
+      onUserCreated(createdBuyer)
 
       resetForm()
       onClose()
-    } catch (error) {
-      console.error('Failed to create Buyer:', error)
-      setErrorMessage(
-        'Unable to create the Buyer. Please try again.',
-      )
+    } catch (error: unknown) {
+      let backendMessage = 'Unable to create the Buyer. Please try again.'
+      if (typeof error === 'object' && error !== null && 'response' in error) {
+        const res = (error as { response?: { data?: { message?: string } } }).response
+        if (res?.data?.message) {
+          backendMessage = res.data.message
+        }
+      }
+      setErrorMessage(backendMessage)
     } finally {
       setIsSubmitting(false)
     }
