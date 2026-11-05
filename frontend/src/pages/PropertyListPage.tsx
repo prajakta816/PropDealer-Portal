@@ -574,7 +574,7 @@ export function PropertyListPage() {
   }
 
 
-  const query = searchQuery.trim().toLowerCase()//searchQuery state which takes the value whenevr user types in the search box 
+  const query = searchQuery.trim().toLowerCase() 
 
   const filteredProperties = properties.filter((property) => {
     const matchesSearch = !query || property.title.toLowerCase().includes(query) || property.address.toLowerCase().includes(query)

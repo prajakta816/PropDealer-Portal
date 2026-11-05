@@ -162,7 +162,6 @@ export default function UserFormDialog({ open, onClose, onUserCreated }: UserFor
             fullWidth
             disabled={isSubmitting}
           />
-
         </Box>
       </DialogContent>
 
