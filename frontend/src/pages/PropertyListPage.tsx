@@ -1,4 +1,3 @@
-
 import { useState, useEffect, type FormEvent } from 'react'
 import { Alert, Box, Button, Chip, Container, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, IconButton, InputAdornment, InputLabel, MenuItem, Select, Snackbar, TextField, Tooltip, Typography, CircularProgress, } from '@mui/material'
 import { Add, ArrowBack, Close, CurrencyRupee, EditOutlined, FilterList, HandshakeOutlined, HomeWorkOutlined, LocationOnOutlined, RestartAlt, Search, VisibilityOutlined, } from '@mui/icons-material'
@@ -7,7 +6,8 @@ import { Link as RouterLink } from 'react-router-dom'
 
 import UserFormDialog from '../component/UserFormDialog'
 import { useAuth } from '../context'
-import { USERS_STORAGE_KEY, type User, } from '../context/authConstants'
+import { getAllBuyersApi, type BuyerItem } from '../api/buyersApi'
+
 import { ROLES } from '../constants/roles'
 import { PROPERTIES_STORAGE_KEY, PROPERTY_STATUS_CONFIG, type Property, type PropertyStatus, } from '../constants/properties'
 
@@ -32,27 +32,6 @@ interface Deal {
 }
 
 const DEALS_STORAGE_KEY = 'propdealer_deals'
-
-// Read all users from the same storage key used by user management.
-// Only users with the Buyer role appear in the deal dropdown.
-function loadBuyers(): User[] {
-  try {
-    const raw = localStorage.getItem(USERS_STORAGE_KEY)
-    const users: User[] = raw ? JSON.parse(raw) : []
-
-    if (!Array.isArray(users)) return []
-
-    return users.filter(
-      (user) =>
-        typeof user?.role === 'string' &&
-        user.role.trim().toLowerCase() ===
-        ROLES.BUYER.toLowerCase(),
-    )
-  } catch (error) {
-    console.error('Failed to load Buyers:', error)
-    return []
-  }
-}
 
 function loadProperties(): Property[] {
   try {
@@ -122,8 +101,20 @@ export function PropertyListPage() {
 
   // Buyer dialog and dropdown state
   const [buyerDialogOpen, setBuyerDialogOpen] = useState(false)
-  const [buyers, setBuyers] = useState<User[]>([])
+  const [buyers, setBuyers] = useState<BuyerItem[]>([])
   const [isLoadingBuyers, setIsLoadingBuyers] = useState(true)
+
+  const fetchBuyers = async () => {
+    try {
+      setIsLoadingBuyers(true)
+      const data = await getAllBuyersApi()
+      setBuyers(data)
+    } catch (err: unknown) {
+      console.error('Failed to load buyers:', err)
+    } finally {
+      setIsLoadingBuyers(false)
+    }
+  }
 
   useEffect(() => {
     try {
@@ -142,25 +133,19 @@ export function PropertyListPage() {
       setIsLoadingDeals(false)
     }
 
-    try {
-      setBuyers(loadBuyers())
-    } catch (err) {
-      console.error('Failed to load buyers:', err)
-    } finally {
-      setIsLoadingBuyers(false)
-    }
+    fetchBuyers()
   }, [])
 
   // Search, filtering and sorting
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [sortField, setSortField] = useState<SortField>('title')
-   const [sortDirection, setSortDirection] =
+  const [sortDirection, setSortDirection] =
     useState<SortDirection>('asc')
   const [toastMessage, setToastMessage] = useState<string | null>(null)
 
   const persistProperties = (updated: Property[]) => {
-    localStorage.setItem( PROPERTIES_STORAGE_KEY, JSON.stringify(updated) )
+    localStorage.setItem(PROPERTIES_STORAGE_KEY, JSON.stringify(updated))
     setProperties(updated)
   }
 
@@ -214,7 +199,7 @@ export function PropertyListPage() {
     resetPropertyForm()
   }
 
-  const handlePropertySubmit = ( event: FormEvent<HTMLFormElement>, ) => {
+  const handlePropertySubmit = (event: FormEvent<HTMLFormElement>,) => {
     event.preventDefault()
     clearErrors()
 
@@ -238,7 +223,8 @@ export function PropertyListPage() {
       setBasePriceError('Enter a valid positive base price.')
       hasError = true
     }
-    if (hasError) {return
+    if (hasError) {
+      return
     }
     const existing = loadProperties()
     const normalizedTitle = title.trim().toLowerCase()
@@ -305,7 +291,6 @@ export function PropertyListPage() {
 
 
   const openCreateDeal = (property: Property) => {
-    setBuyers(loadBuyers())
     setDealProperty(property)
     setDealPrice('')
     setSelectedBuyerId('')
@@ -366,7 +351,6 @@ export function PropertyListPage() {
       return
     }
 
-    setBuyers(loadBuyers())
     setDealProperty(property)
     setDealPrice(deal.status === 'Lost' ? '' : String(deal.dealPrice))
     setSelectedBuyerId(deal.buyerId)
@@ -379,13 +363,11 @@ export function PropertyListPage() {
   }
 
   // Runs after UserFormDialog saves a Buyer successfully.
-  const handleBuyerCreated = (newBuyer: User) => {
-    const refreshedBuyers = loadBuyers()
-    const alreadyIncluded = refreshedBuyers.some(
-      (buyer) => buyer.id === newBuyer.id,
-    )
-
-    setBuyers( alreadyIncluded ? refreshedBuyers : [...refreshedBuyers, newBuyer], )
+  const handleBuyerCreated = (newBuyer: BuyerItem) => {
+    setBuyers((prev) => {
+      const alreadyIncluded = prev.some((b) => b.id === newBuyer.id)
+      return alreadyIncluded ? prev : [newBuyer, ...prev]
+    })
     setSelectedBuyerId(newBuyer.id)
     setBuyerError(null)
     setBuyerDialogOpen(false)
@@ -422,8 +404,8 @@ export function PropertyListPage() {
     if (statusToSave === 'Closed') {
       updatedDeals = updatedDeals.map((item) =>
         item.propertyId === dealProperty.id &&
-        item.id !== deal.id &&
-        item.status === 'Negotiation'
+          item.id !== deal.id &&
+          item.status === 'Negotiation'
           ? { ...item, status: 'Lost' as DealStatus, updatedAt: now }
           : item,
       )
@@ -448,9 +430,9 @@ export function PropertyListPage() {
     const updatedProperties = latestProperties.map((property) =>
       property.id === dealProperty.id
         ? {
-            ...property,
-            status: nextPropertyStatus,
-          }
+          ...property,
+          status: nextPropertyStatus,
+        }
         : property,
     )
 
@@ -647,7 +629,7 @@ export function PropertyListPage() {
 
 
   const columns: GridColDef[] = [
-     {
+    {
       field: 'actions',
       headerName: 'Actions',
       width: 150,
@@ -781,7 +763,7 @@ export function PropertyListPage() {
                 {properties.length} properties listed in the system
               </Typography>
             </Box>
-          {/* Page heading end  */}
+            {/* Page heading end  */}
 
 
             {isAdmin && (
@@ -1096,275 +1078,275 @@ export function PropertyListPage() {
 
         <DialogContent dividers>
           {dealProperty ? (
-            dealModalMode === 'create' ? 
-            (
-              <Box className="flex flex-col gap-5 pt-2">
-                {isDealReadOnly && (
-                  <Alert severity="warning">
-                    This deal has been marked as Lost and is permanently locked in read-only mode.
-                  </Alert>
-                )}
+            dealModalMode === 'create' ?
+              (
+                <Box className="flex flex-col gap-5 pt-2">
+                  {isDealReadOnly && (
+                    <Alert severity="warning">
+                      This deal has been marked as Lost and is permanently locked in read-only mode.
+                    </Alert>
+                  )}
 
-                <Box sx={{ p: 3, borderRadius: 3, color: '#fff', background: 'linear-gradient(135deg, #172554 0%, #2563eb 100%)', }} >
-                  <Box className="flex items-center gap-3">
-                    <Box sx={{ width: 48, height: 48, flexShrink: 0, borderRadius: 2, display: 'grid', placeItems: 'center', bgcolor: 'rgba(255,255,255,0.15)', }} >
-                      <HomeWorkOutlined />
+                  <Box sx={{ p: 3, borderRadius: 3, color: '#fff', background: 'linear-gradient(135deg, #172554 0%, #2563eb 100%)', }} >
+                    <Box className="flex items-center gap-3">
+                      <Box sx={{ width: 48, height: 48, flexShrink: 0, borderRadius: 2, display: 'grid', placeItems: 'center', bgcolor: 'rgba(255,255,255,0.15)', }} >
+                        <HomeWorkOutlined />
+                      </Box>
+
+                      <Box sx={{ minWidth: 0 }}>
+                        <Typography variant="overline" sx={{ opacity: 0.8 }}>
+                          PROPERTY DEAL
+                        </Typography>
+
+                        <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                          {dealProperty.title}
+                        </Typography>
+
+                        <Typography variant="body2" sx={{ opacity: 0.85 }}>
+                          {dealProperty.address}
+                        </Typography>
+                      </Box>
                     </Box>
 
-                    <Box sx={{ minWidth: 0 }}>
-                      <Typography variant="overline" sx={{ opacity: 0.8 }}>
-                        PROPERTY DEAL
-                      </Typography>
+                    <Box className="mt-5 flex flex-wrap items-end justify-between gap-3" sx={{ pt: 2, borderTop: '1px solid rgba(255,255,255,0.2)', }} >
+                      <Box>
+                        <Typography variant="caption" sx={{ opacity: 0.8 }}>
+                          Base Price
+                        </Typography>
 
-                      <Typography variant="h6" sx={{ fontWeight: 800 }}>
-                        {dealProperty.title}
-                      </Typography>
+                        <Typography variant="h5" sx={{ fontWeight: 800 }}>
+                          {formatPrice(dealProperty.basePrice)}
+                        </Typography>
+                      </Box>
 
-                      <Typography variant="body2" sx={{ opacity: 0.85 }}>
-                        {dealProperty.address}
-                      </Typography>
+                      <Chip
+                        label={editingDealId ? 'Editing Deal' : 'New Deal'}
+                        sx={{ color: '#fff', bgcolor: 'rgba(255,255,255,0.16)', fontWeight: 700, }}
+                      />
                     </Box>
                   </Box>
 
-                  <Box className="mt-5 flex flex-wrap items-end justify-between gap-3" sx={{ pt: 2, borderTop: '1px solid rgba(255,255,255,0.2)', }} >
-                    <Box>
-                      <Typography variant="caption" sx={{ opacity: 0.8 }}>
-                        Base Price
-                      </Typography>
+                  <Box>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                      Deal Details
+                    </Typography>
 
-                      <Typography variant="h5" sx={{ fontWeight: 800 }}>
-                        {formatPrice(dealProperty.basePrice)}
-                      </Typography>
-                    </Box>
-
-                    <Chip
-                      label={editingDealId ? 'Editing Deal' : 'New Deal'}
-                      sx={{ color: '#fff', bgcolor: 'rgba(255,255,255,0.16)', fontWeight: 700, }}
-                    />
+                    <Typography variant="body2" color="text.secondary">
+                      Enter the agreed price and select a registered Buyer.
+                    </Typography>
                   </Box>
-                </Box>
 
-                <Box>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-                    Deal Details
-                  </Typography>
-
-                  <Typography variant="body2" color="text.secondary">
-                    Enter the agreed price and select a registered Buyer.
-                  </Typography>
-                </Box>
-
-                <Box component="form" id="deal-form" onSubmit={handleCreateDealForm} className="flex flex-col gap-4" >
-                  <TextField
-                    label={dealStatus === 'Closed' ? 'Agreed Selling Price' : 'Agreed Deal Price'}
-                    type="number"
-                    fullWidth
-                    required={dealStatus !== 'Lost'}
-                    disabled={isSavingDeal || isDealReadOnly || dealStatus === 'Lost'}
-                    value={dealStatus === 'Lost' ? '' : dealPrice}
-                    onChange={(event) => {
-                      setDealPrice(event.target.value)
-                      setDealPriceError(null)
-                    }}
-                    error={Boolean(dealPriceError)}
-                    helperText={
-                      dealStatus === 'Lost'
-                        ? 'No selling price is allowed or recorded for lost deals.'
-                        : dealPriceError ??
+                  <Box component="form" id="deal-form" onSubmit={handleCreateDealForm} className="flex flex-col gap-4" >
+                    <TextField
+                      label={dealStatus === 'Closed' ? 'Agreed Selling Price' : 'Agreed Deal Price'}
+                      type="number"
+                      fullWidth
+                      required={dealStatus !== 'Lost'}
+                      disabled={isSavingDeal || isDealReadOnly || dealStatus === 'Lost'}
+                      value={dealStatus === 'Lost' ? '' : dealPrice}
+                      onChange={(event) => {
+                        setDealPrice(event.target.value)
+                        setDealPriceError(null)
+                      }}
+                      error={Boolean(dealPriceError)}
+                      helperText={
+                        dealStatus === 'Lost'
+                          ? 'No selling price is allowed or recorded for lost deals.'
+                          : dealPriceError ??
                           (dealStatus === 'Closed'
                             ? `Selling price must be greater than base price (₹${formatPrice(dealProperty.basePrice)}).`
                             : 'Enter a positive amount in rupees.')
-                    }
-                    slotProps={{
-                      input: {
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <CurrencyRupee />
-                          </InputAdornment>
-                        ),
-                      },
-                      htmlInput: { min: 1, step: 1 },
-                    }}
-                  />
-
-                  <FormControl fullWidth error={Boolean(buyerError)}>
-                    <InputLabel id="deal-buyer-label">
-                      Select Buyer
-                    </InputLabel>
-
-                    <Select
-                      labelId="deal-buyer-label"
-                      label="Select Buyer"
-                      value={selectedBuyerId}
-                      disabled={isSavingDeal || Boolean(lockedBuyerDeal) || isLoadingBuyers || isDealReadOnly}
-                      onChange={(event) => {
-                        setSelectedBuyerId(String(event.target.value))
-                        setBuyerError(null)
-                      }}
-                    >
-                      {isLoadingBuyers ? (
-                        <MenuItem disabled value="">
-                          <Typography variant="body2" sx={{ color: '#64748b' }}>
-                            Loading buyers...
-                          </Typography>
-                        </MenuItem>
-                      ) : (
-                        buyers.map((buyer) => (
-                          <MenuItem key={buyer.id} value={buyer.id}>
-                            <Box>
-                              <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.3 }}>
-                                {buyer.name}
-                              </Typography>
-                              <Typography variant="caption" sx={{ color: '#64748b', lineHeight: 1.2 }}>
-                                {buyer.email}
-                              </Typography>
-                            </Box>
-                          </MenuItem>
-                        ))
-                      )}
-                    </Select>
-
-                    {buyerError && (
-                      <Typography
-                        color="error"
-                        variant="caption"
-                        sx={{ mt: 1 }}
-                      >
-                        {buyerError}
-                      </Typography>
-                    )}
-
-                    {buyers.length === 0 && (
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ mt: 1 }}
-                      >
-                        No Buyers registered yet. Use Add New Buyer.
-                      </Typography>
-                    )}
-                  </FormControl>
-
-                  <Box sx={{ p: 2, borderRadius: 2, border: '1px solid #dbeafe', bgcolor: '#eff6ff', }} >
-
-                    <Button
-                      type="button"
-                      variant="outlined"
-                      startIcon={<Add />}
-                      disabled={isSavingDeal || Boolean(lockedBuyerDeal) || isDealReadOnly}
-                      onClick={() => {
-                        setBuyers(loadBuyers())
-                        setBuyerDialogOpen(true)
-                      }}
-                      sx={{
-                        mt: 1.5,
-                        textTransform: 'none',
-                        fontWeight: 700,
-                        borderRadius: 2,
-                      }}
-                    >
-                      Add New Buyer
-                    </Button>
-                  </Box>
-
-                  {editingDealId && (
-                    <TextField
-                      select
-                      label="Deal Status"
-                      value={dealStatus}
-                      fullWidth
-                      disabled={isSavingDeal || isDealReadOnly}
-                      onChange={(event) => {
-                        const nextStatus = event.target.value as DealStatus
-                        setDealStatus(nextStatus)
-                        setDealPriceError(null)
-                        if (nextStatus === 'Lost') {
-                          setDealPrice('')
-                        }
-                      }}
-                      helperText={
-                        isDealReadOnly
-                          ? 'This deal is lost and permanently locked.'
-                          : dealStatus === 'Lost'
-                            ? 'Marking as Lost will lock this deal and clear the selling price.'
-                            : 'Buyer changes are restricted for Closed or Lost deals.'
                       }
-                    >
-                      <MenuItem value="Negotiation">Negotiation</MenuItem>
-                      <MenuItem value="Closed">Closed</MenuItem>
-                      <MenuItem value="Lost">Lost</MenuItem>
-                    </TextField>
-                  )}
-                </Box>
-              </Box>
-            ) 
-            : 
-            (
-              <Box className="flex flex-col gap-3 pt-2">
-                <Typography variant="body2">
-                  <strong>Property ID:</strong> {dealProperty.id}
-                </Typography>
+                      slotProps={{
+                        input: {
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <CurrencyRupee />
+                            </InputAdornment>
+                          ),
+                        },
+                        htmlInput: { min: 1, step: 1 },
+                      }}
+                    />
 
-                {isLoadingDeals
-                   ? ( <Box className="flex justify-center py-4"> <CircularProgress size={28} /> </Box> )
-                 : propertyDeals.length === 0 
-                     ? ( <Alert severity="info"> No deals have been recorded for this property yet. </Alert> ) 
-                 : (
-                  propertyDeals.map((deal) => (
-                    <Box
-                      key={deal.id}
-                      className="rounded-xl border border-slate-200 p-4"
-                    >
-                      <Box className="flex flex-col justify-between gap-2 sm:flex-row">
-                        <Box>
-                          <Typography sx={{ fontWeight: 700 }}>
-                            {deal.status === 'Lost' ? 'No Selling Price (Lost)' : formatPrice(deal.dealPrice)}
-                          </Typography>
+                    <FormControl fullWidth error={Boolean(buyerError)}>
+                      <InputLabel id="deal-buyer-label">
+                        Select Buyer
+                      </InputLabel>
 
-                          <Typography variant="body2">
-                            Buyer: {deal.buyerName}
-                          </Typography>
+                      <Select
+                        labelId="deal-buyer-label"
+                        label="Select Buyer"
+                        value={selectedBuyerId}
+                        disabled={isSavingDeal || Boolean(lockedBuyerDeal) || isLoadingBuyers || isDealReadOnly}
+                        onChange={(event) => {
+                          setSelectedBuyerId(String(event.target.value))
+                          setBuyerError(null)
+                        }}
+                      >
+                        {isLoadingBuyers ? (
+                          <MenuItem disabled value="">
+                            <Typography variant="body2" sx={{ color: '#64748b' }}>
+                              Loading buyers...
+                            </Typography>
+                          </MenuItem>
+                        ) : (
+                          buyers.map((buyer) => (
+                            <MenuItem key={buyer.id} value={buyer.id}>
+                              <Box>
+                                <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.3 }}>
+                                  {buyer.name}
+                                </Typography>
+                                <Typography variant="caption" sx={{ color: '#64748b', lineHeight: 1.2 }}>
+                                  {buyer.email}
+                                </Typography>
+                              </Box>
+                            </MenuItem>
+                          ))
+                        )}
+                      </Select>
 
-                          <Typography variant="caption" color="text.secondary" >
-                            {deal.buyerEmail}
-                          </Typography>
-                        </Box>
+                      {buyerError && (
+                        <Typography
+                          color="error"
+                          variant="caption"
+                          sx={{ mt: 1 }}
+                        >
+                          {buyerError}
+                        </Typography>
+                      )}
 
-                        <Chip
-                          label={deal.status}
-                          color={
-                            deal.status === 'Closed'
-                              ? 'success'
-                              : deal.status === 'Lost'
-                                ? 'error'
-                                : 'warning'
-                          }
-                          size="small"
-                        />
-                      </Box>
+                      {buyers.length === 0 && (
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ mt: 1 }}
+                        >
+                          No Buyers registered yet. Use Add New Buyer.
+                        </Typography>
+                      )}
+                    </FormControl>
 
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }} >
-                        Created: {new Date(deal.createdAt).toLocaleString()}
-                      </Typography>
-
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }} >
-                        Updated: {new Date(deal.updatedAt).toLocaleString()}
-                      </Typography>
+                    <Box sx={{ p: 2, borderRadius: 2, border: '1px solid #dbeafe', bgcolor: '#eff6ff', }} >
 
                       <Button
-                        size="small"
-                        sx={{ mt: 1, textTransform: 'none' }}
-                        onClick={() => openEditDeal(deal)}
+                        type="button"
+                        variant="outlined"
+                        startIcon={<Add />}
+                        disabled={isSavingDeal || Boolean(lockedBuyerDeal) || isDealReadOnly}
+                        onClick={() => {
+                          fetchBuyers()
+                          setBuyerDialogOpen(true)
+                        }}
+                        sx={{
+                          mt: 1.5,
+                          textTransform: 'none',
+                          fontWeight: 700,
+                          borderRadius: 2,
+                        }}
                       >
-                        {deal.status === 'Negotiation' && properties.find((p) => p.id === deal.propertyId)?.status === 'under_negotiation'
-                          ? 'Edit Deal'
-                          : 'View Deal'}
+                        Add New Buyer
                       </Button>
                     </Box>
-                  ))
-                )}
-              </Box>
-            )
+
+                    {editingDealId && (
+                      <TextField
+                        select
+                        label="Deal Status"
+                        value={dealStatus}
+                        fullWidth
+                        disabled={isSavingDeal || isDealReadOnly}
+                        onChange={(event) => {
+                          const nextStatus = event.target.value as DealStatus
+                          setDealStatus(nextStatus)
+                          setDealPriceError(null)
+                          if (nextStatus === 'Lost') {
+                            setDealPrice('')
+                          }
+                        }}
+                        helperText={
+                          isDealReadOnly
+                            ? 'This deal is lost and permanently locked.'
+                            : dealStatus === 'Lost'
+                              ? 'Marking as Lost will lock this deal and clear the selling price.'
+                              : 'Buyer changes are restricted for Closed or Lost deals.'
+                        }
+                      >
+                        <MenuItem value="Negotiation">Negotiation</MenuItem>
+                        <MenuItem value="Closed">Closed</MenuItem>
+                        <MenuItem value="Lost">Lost</MenuItem>
+                      </TextField>
+                    )}
+                  </Box>
+                </Box>
+              )
+              :
+              (
+                <Box className="flex flex-col gap-3 pt-2">
+                  <Typography variant="body2">
+                    <strong>Property ID:</strong> {dealProperty.id}
+                  </Typography>
+
+                  {isLoadingDeals
+                    ? (<Box className="flex justify-center py-4"> <CircularProgress size={28} /> </Box>)
+                    : propertyDeals.length === 0
+                      ? (<Alert severity="info"> No deals have been recorded for this property yet. </Alert>)
+                      : (
+                        propertyDeals.map((deal) => (
+                          <Box
+                            key={deal.id}
+                            className="rounded-xl border border-slate-200 p-4"
+                          >
+                            <Box className="flex flex-col justify-between gap-2 sm:flex-row">
+                              <Box>
+                                <Typography sx={{ fontWeight: 700 }}>
+                                  {deal.status === 'Lost' ? 'No Selling Price (Lost)' : formatPrice(deal.dealPrice)}
+                                </Typography>
+
+                                <Typography variant="body2">
+                                  Buyer: {deal.buyerName}
+                                </Typography>
+
+                                <Typography variant="caption" color="text.secondary" >
+                                  {deal.buyerEmail}
+                                </Typography>
+                              </Box>
+
+                              <Chip
+                                label={deal.status}
+                                color={
+                                  deal.status === 'Closed'
+                                    ? 'success'
+                                    : deal.status === 'Lost'
+                                      ? 'error'
+                                      : 'warning'
+                                }
+                                size="small"
+                              />
+                            </Box>
+
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }} >
+                              Created: {new Date(deal.createdAt).toLocaleString()}
+                            </Typography>
+
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }} >
+                              Updated: {new Date(deal.updatedAt).toLocaleString()}
+                            </Typography>
+
+                            <Button
+                              size="small"
+                              sx={{ mt: 1, textTransform: 'none' }}
+                              onClick={() => openEditDeal(deal)}
+                            >
+                              {deal.status === 'Negotiation' && properties.find((p) => p.id === deal.propertyId)?.status === 'under_negotiation'
+                                ? 'Edit Deal'
+                                : 'View Deal'}
+                            </Button>
+                          </Box>
+                        ))
+                      )}
+                </Box>
+              )
           ) : (
             <Typography color="text.secondary">
               No property selected.

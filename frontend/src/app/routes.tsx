@@ -8,6 +8,7 @@ import { UserListPage } from '../pages/UserListPage'
 import { PropertyListPage } from '../pages/PropertyListPage'
 import { PlaceholderPage } from '../pages/PlaceholderPage'
 import { MasterDataPage } from '../pages/MasterDataPage'
+import { BuyerListPage } from '../pages/BuyerListPage'
 import { ProtectedRoute } from './guards/ProtectedRoute'
 import { PublicOnlyRoute } from './guards/PublicOnlyRoute'
 import { ROLES } from '../constants/roles'
@@ -51,10 +52,7 @@ function AppRoutes() {
             path="/agents"
             element={
               <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
-                <PlaceholderPage
-                  title="Agent Management"
-                  description="Admin workspace to view, create, and manage registered agents."
-                />
+                <BuyerListPage/>
               </ProtectedRoute>
             }
           />
@@ -63,10 +61,7 @@ function AppRoutes() {
             path="/buyers"
             element={
               <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.AGENT]}>
-                <PlaceholderPage
-                  title="Buyer Management"
-                  description="Directory of prospective property buyers and active leads."
-                />
+                <BuyerListPage />
               </ProtectedRoute>
             }
           />
