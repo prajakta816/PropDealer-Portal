@@ -14,6 +14,18 @@ enum UserRole {
   CommissionManager
 }
 
+enum PropertyStatus {
+  available
+  under_negotiation
+  sold
+}
+
+enum DealStatus {
+  Negotiation
+  Closed
+  Lost
+}
+
 model User {
   id           String   @id @default(uuid()) @db.Uuid
   name         String
@@ -41,6 +53,14 @@ model User {
 
   masterDataCreated MasterData[] @relation("MasterDataCreatedBy")
   masterDataUpdated MasterData[] @relation("MasterDataUpdatedBy")
+
+  // Properties created or updated by this User.
+  propertiesCreated Property[] @relation("PropertyCreatedBy")
+  propertiesUpdated Property[] @relation("PropertyUpdatedBy")
+
+  // Deals created or updated by this User.
+  dealsCreated Deal[] @relation("DealCreatedBy")
+  dealsUpdated Deal[] @relation("DealUpdatedBy")
 }
 
 model Buyer {
@@ -57,6 +77,9 @@ model Buyer {
   // The User who created or last updated this Buyer.
   createdBy User? @relation("BuyerCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   updatedBy User? @relation("BuyerUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  // Deals this Buyer is involved in.
+  deals Deal[]
 }
 
 enum MasterDataCategory {
@@ -82,3 +105,47 @@ model MasterData {
   @@map("master_data")
 }
 
+model Property {
+  id        String         @id @default(uuid()) @db.Uuid
+  title     String         @unique
+  address   String         @unique
+  basePrice Int
+  status    PropertyStatus @default(available)
+
+  createdAt   DateTime @default(now())
+  createdById String?  @db.Uuid
+
+  updatedAt   DateTime @updatedAt
+  updatedById String?  @db.Uuid
+
+  createdBy User? @relation("PropertyCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User? @relation("PropertyUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  deals Deal[]
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Deal {
+  id         String     @id @default(uuid()) @db.Uuid
+  propertyId String     @db.Uuid
+  buyerId    String     @db.Uuid
+  dealPrice  Int        @default(0)
+  status     DealStatus @default(Negotiation)
+
+  createdAt   DateTime @default(now())
+  createdById String?  @db.Uuid
+
+  updatedAt   DateTime @updatedAt
+  updatedById String?  @db.Uuid
+
+  property  Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  buyer     Buyer    @relation(fields: [buyerId], references: [id], onDelete: Restrict)
+  createdBy User?    @relation("DealCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  updatedBy User?    @relation("DealUpdatedBy", fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@index([propertyId])
+  @@index([buyerId])
+  @@index([status])
+}
