@@ -331,7 +331,7 @@ export function BuyerDialog({
                 isSubmitting ? (
                   <CircularProgress size={16} color="inherit" />
                 ) : (
-                  <DeleteOutline />
+                  <DeleteOutlined />
                 )
               }
               sx={{ px: 3, borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
