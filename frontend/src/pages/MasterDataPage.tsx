@@ -42,7 +42,7 @@ import {
     type MasterDataItem,
 } from '../api/masterDataApi'
 
-import { MasterDataDialog, type DialogMode } from '../component/masterData/MasterDataDialog'
+import { MasterDataDialog, type DialogMode } from '../component/masterData/masterDataDialog'
 
 const CATEGORY_COLORS: Record<
     MasterDataCategory,

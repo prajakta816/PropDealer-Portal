@@ -6,6 +6,8 @@ import authRouter from './modules/auth/auth.routes.js';
 import usersRouter from './modules/users/users.routes.js';
 import masterDataRouter from './modules/masterData/masterData.routes.js';
 import buyersRouter from './modules/buyers/routes.js';
+import propertiesRouter from './modules/property/routes.js';
+import dealsRouter from './modules/deal/routes.js';
 
 import { prisma } from '../prisma/prisma.js';
 
@@ -66,6 +68,13 @@ app.use('/api/master-data', masterDataRouter);
 
 //buyers routes
 app.use('/api/buyers', buyersRouter);
+
+//properties routes
+app.use('/api/properties', propertiesRouter);
+
+//deals routes
+app.use('/api/deals', dealsRouter);
+
 
 // Error handling middleware
 app.use(errorHandler);

@@ -7,53 +7,25 @@ import { Link as RouterLink } from 'react-router-dom'
 import UserFormDialog from '../component/UserFormDialog'
 import { useAuth } from '../context'
 import { getAllBuyersApi, type BuyerItem } from '../api/buyersApi'
+import {
+  getAllPropertiesApi,
+  createPropertyApi,
+  updatePropertyApi,
+} from '../api/propertiesApi'
+import {
+  getDealsByPropertyApi,
+  createDealApi,
+  updateDealApi,
+} from '../api/dealsApi'
 
 import { ROLES } from '../constants/roles'
-import { PROPERTIES_STORAGE_KEY, PROPERTY_STATUS_CONFIG, type Property, type PropertyStatus, } from '../constants/properties'
+import { PROPERTY_STATUS_CONFIG, type Property, type PropertyStatus } from '../constants/properties'
+import { type Deal, type DealStatus } from '../constants/deals'
 
 type ModalMode = 'create' | 'edit' | 'view' | null
-type DealModalMode = 'create' | 'history' | null
+type DealModalMode = 'create' | 'edit' | 'view' | 'history' | null
 type SortField = 'title' | 'address' | 'basePrice' | 'status'
 type SortDirection = 'asc' | 'desc'
-type DealStatus = 'Negotiation' | 'Closed' | 'Lost'
-
-interface Deal {
-  id: string
-  propertyId: string
-  propertyTitle: string
-  buyerId: string
-  buyerName: string
-  buyerEmail: string
-  basePrice: number
-  dealPrice: number
-  status: DealStatus
-  createdAt: string
-  updatedAt: string
-}
-
-const DEALS_STORAGE_KEY = 'propdealer_deals'
-
-function loadProperties(): Property[] {
-  try {
-    const raw = localStorage.getItem(PROPERTIES_STORAGE_KEY)
-    const properties: Property[] = raw ? JSON.parse(raw) : []
-    return Array.isArray(properties) ? properties : []
-  } catch (error) {
-    console.error('Failed to load properties:', error)
-    return []
-  }
-}
-
-function loadDeals(): Deal[] {
-  try {
-    const raw = localStorage.getItem(DEALS_STORAGE_KEY)
-    const deals: Deal[] = raw ? JSON.parse(raw) : []
-    return Array.isArray(deals) ? deals : []
-  } catch (error) {
-    console.error('Failed to load deals:', error)
-    return []
-  }
-}
 
 function formatPrice(price: number): string {
   return `${price.toLocaleString('en-IN')}`
@@ -79,6 +51,7 @@ export function PropertyListPage() {
   const [titleError, setTitleError] = useState<string | null>(null)
   const [addressError, setAddressError] = useState<string | null>(null)
   const [basePriceError, setBasePriceError] = useState<string | null>(null)
+  const [isSavingProperty, setIsSavingProperty] = useState(false)
 
   // Deal state
   const [deals, setDeals] = useState<Deal[]>([])
@@ -116,43 +89,41 @@ export function PropertyListPage() {
     }
   }
 
-  useEffect(() => {
+  const fetchProperties = async () => {
     try {
-      setProperties(loadProperties())
-    } catch (err) {
-      console.error('Failed to load properties:', err)
+      setIsLoadingProperties(true)
+      const data = await getAllPropertiesApi()
+      setProperties(data)
+    } catch (err: unknown) {
+      setToastMessage(err instanceof Error ? err.message : 'Failed to load properties')
     } finally {
       setIsLoadingProperties(false)
     }
+  }
 
+  const fetchDealsForProperty = async (propertyId: string) => {
     try {
-      setDeals(loadDeals())
-    } catch (err) {
-      console.error('Failed to load deals:', err)
+      setIsLoadingDeals(true)
+      const data = await getDealsByPropertyApi(propertyId)
+      setDeals(data)
+    } catch (err: unknown) {
+      setToastMessage(err instanceof Error ? err.message : 'Failed to load deals.')
     } finally {
       setIsLoadingDeals(false)
     }
+  }
 
+  useEffect(() => {
+    fetchProperties()
     fetchBuyers()
+    setIsLoadingDeals(false)
   }, [])
 
-  // Search, filtering and sorting
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [sortField, setSortField] = useState<SortField>('title')
-  const [sortDirection, setSortDirection] =
-    useState<SortDirection>('asc')
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
   const [toastMessage, setToastMessage] = useState<string | null>(null)
-
-  const persistProperties = (updated: Property[]) => {
-    localStorage.setItem(PROPERTIES_STORAGE_KEY, JSON.stringify(updated))
-    setProperties(updated)
-  }
-
-  const persistDeals = (updated: Deal[]) => {
-    localStorage.setItem(DEALS_STORAGE_KEY, JSON.stringify(updated))
-    setDeals(updated)
-  }
 
 
   const clearErrors = () => {
@@ -199,7 +170,7 @@ export function PropertyListPage() {
     resetPropertyForm()
   }
 
-  const handlePropertySubmit = (event: FormEvent<HTMLFormElement>,) => {
+  const handlePropertySubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     clearErrors()
 
@@ -223,74 +194,42 @@ export function PropertyListPage() {
       setBasePriceError('Enter a valid positive base price.')
       hasError = true
     }
+
     if (hasError) {
       return
     }
-    const existing = loadProperties()
-    const normalizedTitle = title.trim().toLowerCase()
-    const normalizedAddress = address.trim().toLowerCase()
 
-    const duplicateTitle = existing.some(
-      (property) =>
-        property.id !== selectedProperty?.id &&
-        property.title.trim().toLowerCase() === normalizedTitle,
-    )
+    setIsSavingProperty(true)
 
-    const duplicateAddress = existing.some(
-      (property) =>
-        property.id !== selectedProperty?.id &&
-        property.address.trim().toLowerCase() === normalizedAddress,
-    )
-
-    if (duplicateTitle || duplicateAddress) {
-      if (duplicateTitle) {
-        setTitleError('A property with this title already exists.')
+    try {
+      if (modalMode === 'create') {
+        await createPropertyApi({
+          title: title.trim(),
+          address: address.trim(),
+          basePrice: parsedPrice,
+        })
+        setToastMessage('Property created successfully.')
+        closeModal()
+        await fetchProperties()
+      } else if (modalMode === 'edit' && selectedProperty) {
+        await updatePropertyApi(selectedProperty.id, {
+          title: title.trim(),
+          address: address.trim(),
+          basePrice: parsedPrice,
+        })
+        setToastMessage('Property updated successfully.')
+        closeModal()
+        await fetchProperties()
       }
-
-      if (duplicateAddress) {
-        setAddressError('A property at this address already exists.')
-      }
-
-      setErrorMessage('Please resolve the duplicate property details.')
-      return
-    }
-
-    if (modalMode === 'create') {
-      const newProperty: Property = {
-        id: `prop_${Date.now()}`,
-        title: title.trim(),
-        address: address.trim(),
-        basePrice: parsedPrice,
-        status: 'available',
-        createdAt: new Date().toISOString(),
-      }
-
-      persistProperties([newProperty, ...existing])
-      setToastMessage('Property created successfully.')
-      closeModal()
-      return
-    }
-
-    if (modalMode === 'edit' && selectedProperty) {
-      const updated = existing.map((property) =>
-        property.id === selectedProperty.id
-          ? {
-            ...property,
-            title: title.trim(),
-            address: address.trim(),
-            basePrice: parsedPrice,
-          }
-          : property,
-      )
-
-      persistProperties(updated)
-      setToastMessage('Property updated successfully.')
-      closeModal()
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to save property.'
+      setErrorMessage(msg)
+    } finally {
+      setIsSavingProperty(false)
     }
   }
 
-
-  const openCreateDeal = (property: Property) => {
+  const openCreateDeal = (property: Property, fromHistory = false) => {
     setDealProperty(property)
     setDealPrice('')
     setSelectedBuyerId('')
@@ -298,12 +237,13 @@ export function PropertyListPage() {
     setEditingDealId(null)
     setDealPriceError(null)
     setBuyerError(null)
-    setOpenedFromHistory(false) // came from the table icon, not from History
+    setOpenedFromHistory(fromHistory)
     setDealModalMode('create')
   }
 
   const openDealHistory = (property: Property) => {
     setDealProperty(property)
+    fetchDealsForProperty(property.id)
     setDealModalMode('history')
   }
 
@@ -321,13 +261,10 @@ export function PropertyListPage() {
     setOpenedFromHistory(false)
   }
 
-  // Called when the user clicks Cancel on the deal form.
-  // If they came from History, go back to History instead of closing.
   const handleCancelDeal = () => {
     if (isSavingDeal) return
 
     if (openedFromHistory) {
-      // Reset form fields but keep dealProperty so History renders correctly.
       setDealPrice('')
       setSelectedBuyerId('')
       setDealStatus('Negotiation')
@@ -335,9 +272,9 @@ export function PropertyListPage() {
       setDealPriceError(null)
       setBuyerError(null)
       setOpenedFromHistory(false)
-      setDealModalMode('history') //  go back to History
+      setDealModalMode('history')
     } else {
-      closeDealModal() //  close everything
+      closeDealModal()
     }
   }
 
@@ -358,11 +295,31 @@ export function PropertyListPage() {
     setEditingDealId(deal.id)
     setDealPriceError(null)
     setBuyerError(null)
-    setOpenedFromHistory(true) // came from History — Cancel should go back
-    setDealModalMode('create')
+    setOpenedFromHistory(true)
+    setDealModalMode('edit')
   }
 
-  // Runs after UserFormDialog saves a Buyer successfully.
+  const openViewDeal = (deal: Deal) => {
+    const property = properties.find(
+      (item) => item.id === deal.propertyId,
+    )
+
+    if (!property) {
+      setToastMessage('The property for this deal could not be found.')
+      return
+    }
+
+    setDealProperty(property)
+    setDealPrice(deal.status === 'Lost' ? '' : String(deal.dealPrice))
+    setSelectedBuyerId(deal.buyerId)
+    setDealStatus(deal.status)
+    setEditingDealId(deal.id)
+    setDealPriceError(null)
+    setBuyerError(null)
+    setOpenedFromHistory(true)
+    setDealModalMode('view')
+  }
+
   const handleBuyerCreated = (newBuyer: BuyerItem) => {
     setBuyers((prev) => {
       const alreadyIncluded = prev.some((b) => b.id === newBuyer.id)
@@ -373,111 +330,68 @@ export function PropertyListPage() {
     setBuyerDialogOpen(false)
   }
 
-  const performSaveDeal = (statusToSave: DealStatus = dealStatus) => {
+  const performSaveDeal = async (statusToSave: DealStatus = dealStatus) => {
     if (!dealProperty) return
 
     const buyer = buyers.find((item) => item.id === selectedBuyerId)
     if (!buyer) return
 
     const previousDeal = deals.find((deal) => deal.id === editingDealId)
-    const now = new Date().toISOString()
     const finalPrice = statusToSave === 'Lost' ? 0 : Number(dealPrice)
 
-    const deal: Deal = {
-      id: previousDeal?.id ?? `deal_${Date.now()}`,
-      propertyId: dealProperty.id,
-      propertyTitle: dealProperty.title,
-      buyerId: buyer.id,
-      buyerName: buyer.name,
-      buyerEmail: buyer.email,
-      basePrice: dealProperty.basePrice,
-      dealPrice: finalPrice,
-      status: statusToSave,
-      createdAt: previousDeal?.createdAt ?? now,
-      updatedAt: now,
-    }
-
-    let updatedDeals = previousDeal
-      ? deals.map((item) => (item.id === previousDeal.id ? deal : item))
-      : [deal, ...deals]
-
-    if (statusToSave === 'Closed') {
-      updatedDeals = updatedDeals.map((item) =>
-        item.propertyId === dealProperty.id &&
-          item.id !== deal.id &&
-          item.status === 'Negotiation'
-          ? { ...item, status: 'Lost' as DealStatus, updatedAt: now }
-          : item,
-      )
-    }
-
-    persistDeals(updatedDeals)
-
-    const dealsForProperty = updatedDeals.filter(
-      (item) => item.propertyId === dealProperty.id,
-    )
-
-    let nextPropertyStatus: PropertyStatus = 'available'
-    if (dealsForProperty.some((item) => item.status === 'Closed')) {
-      nextPropertyStatus = 'sold'
-    } else if (
-      dealsForProperty.some((item) => item.status === 'Negotiation')
-    ) {
-      nextPropertyStatus = 'under_negotiation'
-    }
-
-    const latestProperties = loadProperties()
-    const updatedProperties = latestProperties.map((property) =>
-      property.id === dealProperty.id
-        ? {
-          ...property,
-          status: nextPropertyStatus,
-        }
-        : property,
-    )
-
-    persistProperties(updatedProperties)
-    setDealProperty((prev) =>
-      prev && prev.id === dealProperty.id
-        ? { ...prev, status: nextPropertyStatus }
-        : prev,
-    )
-
-    setToastMessage(
-      previousDeal
-        ? statusToSave === 'Lost'
-          ? 'Deal marked as Lost.'
-          : statusToSave === 'Closed'
-            ? 'Deal closed successfully.'
-            : 'Deal updated successfully.'
-        : 'Deal created successfully.',
-    )
-
-    if (openedFromHistory) {
-      setOpenedFromHistory(false)
-      setDealPrice('')
-      setSelectedBuyerId('')
-      setDealStatus('Negotiation')
-      setEditingDealId(null)
-      setDealPriceError(null)
-      setBuyerError(null)
-      setDealModalMode('history')
-    } else {
-      closeDealModal()
-    }
-  }
-
-  const handleConfirmLost = () => {
-    setConfirmLostOpen(false)
     setIsSavingDeal(true)
+
     try {
-      performSaveDeal('Lost')
-    } catch (error) {
+      if (previousDeal) {
+        await updateDealApi(previousDeal.id, {
+          buyerId: buyer.id,
+          dealPrice: finalPrice,
+          status: statusToSave,
+        })
+      } else {
+        await createDealApi(dealProperty.id, {
+          buyerId: buyer.id,
+          dealPrice: finalPrice,
+        })
+      }
+
+      setToastMessage(
+        previousDeal
+          ? statusToSave === 'Lost'
+            ? 'Deal marked as Lost.'
+            : statusToSave === 'Closed'
+              ? 'Deal closed successfully.'
+              : 'Deal updated successfully.'
+          : 'Deal created successfully.',
+      )
+
+      await fetchProperties()
+      await fetchDealsForProperty(dealProperty.id)
+
+      if (openedFromHistory) {
+        setOpenedFromHistory(false)
+        setDealPrice('')
+        setSelectedBuyerId('')
+        setDealStatus('Negotiation')
+        setEditingDealId(null)
+        setDealPriceError(null)
+        setBuyerError(null)
+        setDealModalMode('history')
+      } else {
+        closeDealModal()
+      }
+    } catch (error: unknown) {
       console.error('Unable to save deal:', error)
-      setToastMessage('Unable to save the deal. Please try again.')
+      const msg = error instanceof Error ? error.message : 'Unable to save the deal. Please try again.'
+      setToastMessage(msg)
     } finally {
       setIsSavingDeal(false)
     }
+  }
+
+  const handleConfirmLost = async () => {
+    setConfirmLostOpen(false)
+    await performSaveDeal('Lost')
   }
 
   const handleCreateDealForm = async (
@@ -500,25 +414,17 @@ export function PropertyListPage() {
       hasError = true
     }
 
-    if (dealStatus === 'Closed') {
+    if (dealStatus !== 'Lost') {
       if (!dealPrice.trim()) {
         setDealPriceError('Selling price is required.')
         hasError = true
       } else if (!Number.isFinite(parsedDealPrice) || parsedDealPrice <= 0) {
         setDealPriceError('Enter a valid positive selling price.')
         hasError = true
-      } else if (parsedDealPrice <= dealProperty.basePrice) {
+      } else if (parsedDealPrice < dealProperty.basePrice) {
         setDealPriceError(
-          `Selling price must be greater than base price (${formatPrice(dealProperty.basePrice)}).`,
+          `Selling price must be greater than or equal to base price (${formatPrice(dealProperty.basePrice)}).`,
         )
-        hasError = true
-      }
-    } else if (dealStatus === 'Negotiation') {
-      if (!dealPrice.trim()) {
-        setDealPriceError('Deal price is required.')
-        hasError = true
-      } else if (!Number.isFinite(parsedDealPrice) || parsedDealPrice <= 0) {
-        setDealPriceError('Enter a valid positive deal price.')
         hasError = true
       }
     }
@@ -529,21 +435,6 @@ export function PropertyListPage() {
 
     if (!previousDeal && dealProperty.status === 'sold') {
       setBuyerError('This property is already sold. No further deals can be added.')
-      return
-    }
-
-    const conflictingDeal = deals.find(
-      (deal) =>
-        deal.id !== editingDealId &&
-        deal.propertyId === dealProperty.id &&
-        deal.buyerId === buyer.id &&
-        deal.status !== 'Lost',
-    )
-
-    if (conflictingDeal) {
-      setBuyerError(
-        'A deal for this property and buyer already exists and is not lost.',
-      )
       return
     }
 
@@ -561,20 +452,11 @@ export function PropertyListPage() {
       return
     }
 
-    setIsSavingDeal(true)
-
-    try {
-      performSaveDeal(dealStatus)
-    } catch (error) {
-      console.error('Unable to save deal:', error)
-      setToastMessage('Unable to save the deal. Please try again.')
-    } finally {
-      setIsSavingDeal(false)
-    }
+    await performSaveDeal(dealStatus)
   }
 
 
-  const query = searchQuery.trim().toLowerCase() 
+  const query = searchQuery.trim().toLowerCase()
 
   const filteredProperties = properties.filter((property) => {
     const matchesSearch = !query || property.title.toLowerCase().includes(query) || property.address.toLowerCase().includes(query)
@@ -617,22 +499,17 @@ export function PropertyListPage() {
     (deal) => deal.propertyId === dealProperty?.id,
   )
 
-  const lockedBuyerDeal = deals.find(
-    (deal) =>
-      deal.id === editingDealId &&
-      (deal.status === 'Closed' || deal.status === 'Lost'),
-  )
+  const currentEditingDeal = deals.find((deal) => deal.id === editingDealId);
 
-  const isDealReadOnly = Boolean(
-    editingDealId && deals.find((deal) => deal.id === editingDealId)?.status === 'Lost',
-  )
+  const lockedBuyerDeal = currentEditingDeal && (currentEditingDeal.status === 'Closed' || currentEditingDeal.status === 'Lost');
 
+  const isDealReadOnly = Boolean(dealModalMode === 'view' || lockedBuyerDeal);
 
   const columns: GridColDef[] = [
     {
       field: 'actions',
       headerName: 'Actions',
-      width: 150,
+      width: 250,
       sortable: false,
       align: 'center',
       headerAlign: 'center',
@@ -640,7 +517,7 @@ export function PropertyListPage() {
         const property = params.row as Property
 
         return (
-          <Box className="flex items-center gap-1">
+          <Box className="flex items-center gap-1.5">
             <Tooltip title="View Property" arrow>
               <IconButton
                 size="small"
@@ -661,25 +538,28 @@ export function PropertyListPage() {
               </Tooltip>
             )}
 
-            {isAgent && (
-              <Tooltip title="Create Deal" arrow>
-                <IconButton
-                  size="small"
-                  onClick={() => openCreateDeal(property)}
-                >
-                  <HandshakeOutlined fontSize="small" />
-                </IconButton>
-              </Tooltip>
+            {isAgent && (<Button
+              size="small"
+              variant="outlined"
+              startIcon={<HandshakeOutlined />}
+              onClick={() => openDealHistory(property)}
+              sx={{ textTransform: 'none', fontWeight: 600, borderRadius: 2 }}
+            >
+              Create/View Deals
+            </Button>
             )}
 
-            <Tooltip title="Deal History" arrow>
-              <IconButton
-                size="small"
-                onClick={() => openDealHistory(property)}
-              >
-                <FilterList fontSize="small" />
-              </IconButton>
-            </Tooltip>
+            {isAdmin && (<Button
+              size="small"
+              variant="outlined"
+              startIcon={<HandshakeOutlined />}
+              onClick={() => openDealHistory(property)}
+              sx={{ textTransform: 'none', fontWeight: 600, borderRadius: 2 }}
+            >
+              View Deals
+            </Button>
+            )}
+
           </Box>
         )
       },
@@ -1013,7 +893,7 @@ export function PropertyListPage() {
               <Chip
                 label={
                   modalMode === 'create'
-                    ? 'Available (Default)'
+                    ? 'Available'
                     : PROPERTY_STATUS_CONFIG[
                       selectedProperty?.status ?? 'available'
                     ].label
@@ -1031,7 +911,7 @@ export function PropertyListPage() {
         </DialogContent>
 
         <DialogActions className="!px-6 !pb-5">
-          <Button onClick={closeModal} variant="outlined">
+          <Button onClick={closeModal} variant="outlined" disabled={isSavingProperty}>
             {modalMode === 'view' ? 'Close' : 'Cancel'}
           </Button>
 
@@ -1040,8 +920,18 @@ export function PropertyListPage() {
               type="submit"
               form="property-form"
               variant="contained"
+              disabled={isSavingProperty}
+              startIcon={
+                isSavingProperty ? (
+                  <CircularProgress size={16} color="inherit" />
+                ) : undefined
+              }
             >
-              {modalMode === 'create' ? 'Create Property' : 'Save Changes'}
+              {isSavingProperty
+                ? 'Saving...'
+                : modalMode === 'create'
+                  ? 'Create Property'
+                  : 'Save Changes'}
             </Button>
           )}
         </DialogActions>
@@ -1057,13 +947,13 @@ export function PropertyListPage() {
         <DialogTitle className="flex items-center justify-between">
           <Box>
             <Typography variant="h6" sx={{ fontWeight: 800 }}>
-              {dealModalMode === 'create'
-                ? isDealReadOnly
-                  ? 'View Deal (Lost - Read-Only)'
-                  : editingDealId
+              {dealModalMode === 'history'
+                ? 'Property Deals'
+                : dealModalMode === 'view'
+                  ? 'View Deal'
+                  : dealModalMode === 'edit'
                     ? 'Edit Deal'
-                    : 'Create Deal'
-                : 'Property Deals History'}
+                    : 'Create New Deal'}
             </Typography>
 
             <Typography variant="caption" color="text.secondary">
@@ -1078,214 +968,229 @@ export function PropertyListPage() {
 
         <DialogContent dividers>
           {dealProperty ? (
-            dealModalMode === 'create' ?
-              (
-                <Box className="flex flex-col gap-5 pt-2">
-                  {isDealReadOnly && (
-                    <Alert severity="warning">
-                      This deal has been marked as Lost and is permanently locked in read-only mode.
-                    </Alert>
-                  )}
+            dealModalMode !== 'history' ? (
+              <Box className="flex flex-col gap-5 pt-2">
+                {lockedBuyerDeal && (
+                  <Alert severity="warning">
+                    This deal is {currentEditingDeal?.status.toLowerCase()} and is permanently
+                    locked in read-only mode.
+                  </Alert>
+                )}
 
-                  <Box sx={{ p: 3, borderRadius: 3, color: '#fff', background: 'linear-gradient(135deg, #172554 0%, #2563eb 100%)', }} >
-                    <Box className="flex items-center gap-3">
-                      <Box sx={{ width: 48, height: 48, flexShrink: 0, borderRadius: 2, display: 'grid', placeItems: 'center', bgcolor: 'rgba(255,255,255,0.15)', }} >
-                        <HomeWorkOutlined />
-                      </Box>
-
-                      <Box sx={{ minWidth: 0 }}>
-                        <Typography variant="overline" sx={{ opacity: 0.8 }}>
-                          PROPERTY DEAL
-                        </Typography>
-
-                        <Typography variant="h6" sx={{ fontWeight: 800 }}>
-                          {dealProperty.title}
-                        </Typography>
-
-                        <Typography variant="body2" sx={{ opacity: 0.85 }}>
-                          {dealProperty.address}
-                        </Typography>
-                      </Box>
+                <Box sx={{ p: 3, borderRadius: 3, color: '#fff', background: 'linear-gradient(135deg, #172554 0%, #2563eb 100%)', }} >
+                  <Box className="flex items-center gap-3">
+                    <Box sx={{ width: 48, height: 48, flexShrink: 0, borderRadius: 2, display: 'grid', placeItems: 'center', bgcolor: 'rgba(255,255,255,0.15)', }} >
+                      <HomeWorkOutlined />
                     </Box>
 
-                    <Box className="mt-5 flex flex-wrap items-end justify-between gap-3" sx={{ pt: 2, borderTop: '1px solid rgba(255,255,255,0.2)', }} >
-                      <Box>
-                        <Typography variant="caption" sx={{ opacity: 0.8 }}>
-                          Base Price
-                        </Typography>
+                    <Box sx={{ minWidth: 0 }}>
+                      <Typography variant="overline" sx={{ opacity: 0.8 }}>
+                        PROPERTY DEAL
+                      </Typography>
 
-                        <Typography variant="h5" sx={{ fontWeight: 800 }}>
-                          {formatPrice(dealProperty.basePrice)}
-                        </Typography>
-                      </Box>
+                      <Typography variant="h6" sx={{ fontWeight: 800 }}>
+                        {dealProperty.title}
+                      </Typography>
 
-                      <Chip
-                        label={editingDealId ? 'Editing Deal' : 'New Deal'}
-                        sx={{ color: '#fff', bgcolor: 'rgba(255,255,255,0.16)', fontWeight: 700, }}
-                      />
+                      <Typography variant="body2" sx={{ opacity: 0.85 }}>
+                        {dealProperty.address}
+                      </Typography>
                     </Box>
                   </Box>
 
-                  <Box>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
-                      Deal Details
-                    </Typography>
+                  <Box className="mt-5 flex flex-wrap items-end justify-between gap-3" sx={{ pt: 2, borderTop: '1px solid rgba(255,255,255,0.2)', }} >
+                    <Box>
+                      <Typography variant="caption" sx={{ opacity: 0.8 }}>
+                        Base Price
+                      </Typography>
 
-                    <Typography variant="body2" color="text.secondary">
-                      Enter the agreed price and select a registered Buyer.
-                    </Typography>
-                  </Box>
-
-                  <Box component="form" id="deal-form" onSubmit={handleCreateDealForm} className="flex flex-col gap-4" >
-                    <TextField
-                      label={dealStatus === 'Closed' ? 'Agreed Selling Price' : 'Agreed Deal Price'}
-                      type="number"
-                      fullWidth
-                      required={dealStatus !== 'Lost'}
-                      disabled={isSavingDeal || isDealReadOnly || dealStatus === 'Lost'}
-                      value={dealStatus === 'Lost' ? '' : dealPrice}
-                      onChange={(event) => {
-                        setDealPrice(event.target.value)
-                        setDealPriceError(null)
-                      }}
-                      error={Boolean(dealPriceError)}
-                      helperText={
-                        dealStatus === 'Lost'
-                          ? 'No selling price is allowed or recorded for lost deals.'
-                          : dealPriceError ??
-                          (dealStatus === 'Closed'
-                            ? `Selling price must be greater than base price (₹${formatPrice(dealProperty.basePrice)}).`
-                            : 'Enter a positive amount in rupees.')
-                      }
-                      slotProps={{
-                        input: {
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <CurrencyRupee />
-                            </InputAdornment>
-                          ),
-                        },
-                        htmlInput: { min: 1, step: 1 },
-                      }}
-                    />
-
-                    <FormControl fullWidth error={Boolean(buyerError)}>
-                      <InputLabel id="deal-buyer-label">
-                        Select Buyer
-                      </InputLabel>
-
-                      <Select
-                        labelId="deal-buyer-label"
-                        label="Select Buyer"
-                        value={selectedBuyerId}
-                        disabled={isSavingDeal || Boolean(lockedBuyerDeal) || isLoadingBuyers || isDealReadOnly}
-                        onChange={(event) => {
-                          setSelectedBuyerId(String(event.target.value))
-                          setBuyerError(null)
-                        }}
-                      >
-                        {isLoadingBuyers ? (
-                          <MenuItem disabled value="">
-                            <Typography variant="body2" sx={{ color: '#64748b' }}>
-                              Loading buyers...
-                            </Typography>
-                          </MenuItem>
-                        ) : (
-                          buyers.map((buyer) => (
-                            <MenuItem key={buyer.id} value={buyer.id}>
-                              <Box>
-                                <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.3 }}>
-                                  {buyer.name}
-                                </Typography>
-                                <Typography variant="caption" sx={{ color: '#64748b', lineHeight: 1.2 }}>
-                                  {buyer.email}
-                                </Typography>
-                              </Box>
-                            </MenuItem>
-                          ))
-                        )}
-                      </Select>
-
-                      {buyerError && (
-                        <Typography
-                          color="error"
-                          variant="caption"
-                          sx={{ mt: 1 }}
-                        >
-                          {buyerError}
-                        </Typography>
-                      )}
-
-                      {buyers.length === 0 && (
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          sx={{ mt: 1 }}
-                        >
-                          No Buyers registered yet. Use Add New Buyer.
-                        </Typography>
-                      )}
-                    </FormControl>
-
-                    <Box sx={{ p: 2, borderRadius: 2, border: '1px solid #dbeafe', bgcolor: '#eff6ff', }} >
-
-                      <Button
-                        type="button"
-                        variant="outlined"
-                        startIcon={<Add />}
-                        disabled={isSavingDeal || Boolean(lockedBuyerDeal) || isDealReadOnly}
-                        onClick={() => {
-                          fetchBuyers()
-                          setBuyerDialogOpen(true)
-                        }}
-                        sx={{
-                          mt: 1.5,
-                          textTransform: 'none',
-                          fontWeight: 700,
-                          borderRadius: 2,
-                        }}
-                      >
-                        Add New Buyer
-                      </Button>
+                      <Typography variant="h5" sx={{ fontWeight: 800 }}>
+                        {formatPrice(dealProperty.basePrice)}
+                      </Typography>
                     </Box>
-
-                    {editingDealId && (
-                      <TextField
-                        select
-                        label="Deal Status"
-                        value={dealStatus}
-                        fullWidth
-                        disabled={isSavingDeal || isDealReadOnly}
-                        onChange={(event) => {
-                          const nextStatus = event.target.value as DealStatus
-                          setDealStatus(nextStatus)
-                          setDealPriceError(null)
-                          if (nextStatus === 'Lost') {
-                            setDealPrice('')
-                          }
-                        }}
-                        helperText={
-                          isDealReadOnly
-                            ? 'This deal is lost and permanently locked.'
-                            : dealStatus === 'Lost'
-                              ? 'Marking as Lost will lock this deal and clear the selling price.'
-                              : 'Buyer changes are restricted for Closed or Lost deals.'
-                        }
-                      >
-                        <MenuItem value="Negotiation">Negotiation</MenuItem>
-                        <MenuItem value="Closed">Closed</MenuItem>
-                        <MenuItem value="Lost">Lost</MenuItem>
-                      </TextField>
-                    )}
                   </Box>
                 </Box>
-              )
+
+                <Box>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 800 }}>
+                    Deal Details
+                  </Typography>
+
+                  <Typography variant="body2" color="text.secondary">
+                    Enter the agreed price and select a registered Buyer.
+                  </Typography>
+                </Box>
+
+                <Box component="form" id="deal-form" onSubmit={handleCreateDealForm} className="flex flex-col gap-4" >
+                  <TextField
+                    label={dealStatus === 'Closed' ? 'Agreed Selling Price' : 'Agreed Deal Price'}
+                    type="number"
+                    fullWidth
+                    required={dealStatus !== 'Lost'}
+                    disabled={isSavingDeal || isDealReadOnly || dealStatus === 'Lost'}
+                    value={dealStatus === 'Lost' ? '' : dealPrice}
+                    onChange={(event) => {
+                      setDealPrice(event.target.value)
+                      setDealPriceError(null)
+                    }}
+                    error={Boolean(dealPriceError)}
+                    helperText={
+                      dealStatus === 'Lost'
+                        ? 'No selling price is allowed or recorded for lost deals.'
+                        : dealPriceError ??
+                        (dealStatus === 'Closed'
+                          ? `Selling price must be greater than base price (₹${formatPrice(dealProperty.basePrice)}).`
+                          : 'Enter a positive amount in rupees.')
+                    }
+                    slotProps={{
+                      input: {
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <CurrencyRupee />
+                          </InputAdornment>
+                        ),
+                      },
+                      htmlInput: { min: 1, step: 1 },
+                    }}
+                  />
+
+                  <FormControl fullWidth error={Boolean(buyerError)}>
+                    <InputLabel id="deal-buyer-label">
+                      Select Buyer
+                    </InputLabel>
+
+                    <Select
+                      labelId="deal-buyer-label"
+                      label="Select Buyer"
+                      value={selectedBuyerId}
+                      disabled={isSavingDeal || Boolean(lockedBuyerDeal) || isLoadingBuyers || isDealReadOnly}
+                      onChange={(event) => {
+                        setSelectedBuyerId(String(event.target.value))
+                        setBuyerError(null)
+                      }}
+                    >
+                      {isLoadingBuyers ? (
+                        <MenuItem disabled value="">
+                          <Typography variant="body2" sx={{ color: '#64748b' }}>
+                            Loading buyers...
+                          </Typography>
+                        </MenuItem>
+                      ) : (
+                        buyers.map((buyer) => (
+                          <MenuItem key={buyer.id} value={buyer.id}>
+                            <Box>
+                              <Typography variant="body2" sx={{ fontWeight: 600, lineHeight: 1.3 }}>
+                                {buyer.name}
+                              </Typography>
+                              <Typography variant="caption" sx={{ color: '#64748b', lineHeight: 1.2 }}>
+                                {buyer.email}
+                              </Typography>
+                            </Box>
+                          </MenuItem>
+                        ))
+                      )}
+                    </Select>
+
+                    {buyerError && (
+                      <Typography
+                        color="error"
+                        variant="caption"
+                        sx={{ mt: 1 }}
+                      >
+                        {buyerError}
+                      </Typography>
+                    )}
+
+                    {buyers.length === 0 && (
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ mt: 1 }}
+                      >
+                        No Buyers registered yet. Use Add New Buyer.
+                      </Typography>
+                    )}
+                  </FormControl>
+
+                  <Box sx={{ p: 2, borderRadius: 2, border: '1px solid #dbeafe', bgcolor: '#eff6ff', }} >
+
+                    <Button
+                      type="button"
+                      variant="outlined"
+                      startIcon={<Add />}
+                      disabled={isSavingDeal || Boolean(lockedBuyerDeal) || isDealReadOnly}
+                      onClick={() => {
+                        fetchBuyers()
+                        setBuyerDialogOpen(true)
+                      }}
+                      sx={{
+                        mt: 1.5,
+                        textTransform: 'none',
+                        fontWeight: 700,
+                        borderRadius: 2,
+                      }}
+                    >
+                      Add New Buyer
+                    </Button>
+                  </Box>
+
+                  {editingDealId && (
+                    <TextField
+                      select
+                      label="Deal Status"
+                      value={dealStatus}
+                      fullWidth
+                      disabled={isSavingDeal || isDealReadOnly}
+                      onChange={(event) => {
+                        const nextStatus = event.target.value as DealStatus
+                        setDealStatus(nextStatus)
+                        setDealPriceError(null)
+                        if (nextStatus === 'Lost') {
+                          setDealPrice('')
+                        }
+                      }}
+                      helperText={
+                        isDealReadOnly
+                          ? 'This deal is lost and permanently locked.'
+                          : dealStatus === 'Lost'
+                            ? 'Marking as Lost will lock this deal and clear the selling price.'
+                            : 'Buyer changes are restricted for Closed or Lost deals.'
+                      }
+                    >
+                      <MenuItem value="Negotiation">Negotiation</MenuItem>
+                      <MenuItem value="Closed">Closed</MenuItem>
+                      <MenuItem value="Lost">Lost</MenuItem>
+                    </TextField>
+                  )}
+                </Box>
+              </Box>
+            )
               :
               (
                 <Box className="flex flex-col gap-3 pt-2">
-                  <Typography variant="body2">
-                    <strong>Property ID:</strong> {dealProperty.id}
-                  </Typography>
+                  <Box className="flex items-center justify-between pb-3 border-b border-slate-200">
+                    <Box>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        Base Price: ₹{formatPrice(dealProperty.basePrice)}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Property Status: {PROPERTY_STATUS_CONFIG[dealProperty.status]?.label ?? dealProperty.status}
+                      </Typography>
+                    </Box>
+
+                    {isAgent && (
+                      <Button
+                        size="small"
+                        variant="contained"
+                        startIcon={<Add />}
+                        disabled={dealProperty.status === 'sold' || propertyDeals.some((d) => d.status === 'Closed')}
+                        onClick={() => openCreateDeal(dealProperty, true)}
+                        sx={{ textTransform: 'none', fontWeight: 700, borderRadius: 2 }}
+                      >
+                        Create New Deal
+                      </Button>
+                    )}
+                  </Box>
 
                   {isLoadingDeals
                     ? (<Box className="flex justify-center py-4"> <CircularProgress size={28} /> </Box>)
@@ -1304,11 +1209,11 @@ export function PropertyListPage() {
                                 </Typography>
 
                                 <Typography variant="body2">
-                                  Buyer: {deal.buyerName}
+                                  Buyer: {deal.buyer?.name ?? 'Unknown Buyer'}
                                 </Typography>
 
                                 <Typography variant="caption" color="text.secondary" >
-                                  {deal.buyerEmail}
+                                  {deal.buyer?.email ?? ''}
                                 </Typography>
                               </Box>
 
@@ -1333,15 +1238,28 @@ export function PropertyListPage() {
                               Updated: {new Date(deal.updatedAt).toLocaleString()}
                             </Typography>
 
-                            <Button
-                              size="small"
-                              sx={{ mt: 1, textTransform: 'none' }}
-                              onClick={() => openEditDeal(deal)}
-                            >
-                              {deal.status === 'Negotiation' && properties.find((p) => p.id === deal.propertyId)?.status === 'under_negotiation'
-                                ? 'Edit Deal'
-                                : 'View Deal'}
-                            </Button>
+                            <Box className="flex items-center gap-2 mt-2">
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                sx={{ textTransform: 'none' }}
+                                onClick={() => openViewDeal(deal)}
+                              >
+                                View Deal
+                              </Button>
+
+                              {isAgent && (
+                                <Button
+                                  size="small"
+                                  variant="contained"
+                                  disabled={deal.status === 'Closed' || deal.status === 'Lost' || dealProperty.status === 'sold'}
+                                  sx={{ textTransform: 'none' }}
+                                  onClick={() => openEditDeal(deal)}
+                                >
+                                  Edit Deal
+                                </Button>
+                              )}
+                            </Box>
                           </Box>
                         ))
                       )}
@@ -1354,46 +1272,70 @@ export function PropertyListPage() {
           )}
         </DialogContent>
 
-        {dealModalMode === 'create' && (
-          <DialogActions className="!px-6 !py-4">
+        {dealModalMode !== 'history' && (
+          <DialogActions className="!px-6 !py-4 flex flex-wrap justify-between gap-2">
             <Button
               onClick={handleCancelDeal}
               disabled={isSavingDeal}
             >
-              {openedFromHistory ? ' Back to History' : 'Cancel'}
+              {openedFromHistory ? 'Back to History' : 'Cancel'}
             </Button>
 
             {!isDealReadOnly && (
-              <Button
-                type="submit"
-                form="deal-form"
-                variant="contained"
-                disabled={isSavingDeal}
-                startIcon={
-                  isSavingDeal ? (
-                    <CircularProgress size={16} color="inherit" />
-                  ) : (
-                    <HandshakeOutlined />
-                  )
-                }
-                sx={{
-                  px: 3,
-                  py: 1,
-                  borderRadius: 2,
-                  fontWeight: 700,
-                  textTransform: 'none',
-                }}
-              >
-                {isSavingDeal
-                  ? 'Saving Deal...'
-                  : editingDealId
-                    ? dealStatus === 'Lost'
-                      ? 'Mark as Lost'
-                      : dealStatus === 'Closed'
-                        ? 'Close Deal'
-                        : 'Save Changes'
-                    : 'Create Deal'}
-              </Button>
+              <Box className="flex items-center gap-2">
+                {dealModalMode === 'edit' && (
+                  <>
+                    <Button
+                      type="button"
+                      variant="outlined"
+                      color="error"
+                      disabled={isSavingDeal}
+                      onClick={() => setConfirmLostOpen(true)}
+                      sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
+                    >
+                      Deal Lost
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="contained"
+                      color="success"
+                      disabled={isSavingDeal}
+                      onClick={() => performSaveDeal('Closed')}
+                      sx={{ borderRadius: 2, fontWeight: 700, textTransform: 'none' }}
+                    >
+                      Deal Closed
+                    </Button>
+                  </>
+                )}
+
+                <Button
+                  type="submit"
+                  form="deal-form"
+                  variant="contained"
+                  disabled={isSavingDeal}
+                  startIcon={
+                    isSavingDeal ? (
+                      <CircularProgress size={16} color="inherit" />
+                    ) : (
+                      <HandshakeOutlined />
+                    )
+                  }
+                  sx={{
+                    px: 3,
+                    py: 1,
+                    borderRadius: 2,
+                    fontWeight: 700,
+                    textTransform: 'none',
+                  }}
+                >
+                  {isSavingDeal
+                    ? 'Saving Deal...'
+                    : dealModalMode === 'create'
+                      ? 'Create Deal'
+                      : 'Save Changes'}
+                </Button>
+              </Box>
             )}
           </DialogActions>
         )}
